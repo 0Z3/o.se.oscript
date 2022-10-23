@@ -1,0 +1,149 @@
+/s/./o.se.oscript/o.se.oscript.so
+/!/load
+/<</_x
+
+/s/./o.se.oscbn/o.se.oscbn.so
+/!/load
+/<</_x
+
+/s/./o.se.time/o.se.time.so
+/!/load
+/<</_x
+
+/#/ /'/>/_e
+/#/ /'/!/swap
+/#/ /'/s//*
+/#/ /'/!/select/all
+/#/ /'/!/unpack/drop
+/#/ /'/!/drop
+/#/ /'/!/addresses
+/#/ /'/!/rot
+/#/ /'/!/swap
+/#/ /'/!/gather
+/#/ /'/!/nip
+/#/ /'/!/join
+/#/ /'/</_e
+/#/ /!/bundle/all
+/#/ />/_x
+/#/ /!/swap
+/#/ /s//store
+/#/ /!/assign
+/#/ /<</_x
+/o/load : ({["/$/filename", "/!/read", "/!/nip", "/i/115", "/!/blob/totype", "/!/dup", "/!/println", "/!/o/parse", "/!/oscbn/println", "/!/println", "/!/exec1", "/!/drop"]}, "/filename") /o/defn
+/!/o/parse
+/!/exec1
+/!/drop
+/<</_x
+
+/'/>/_e
+/'/!/swap
+/'/s//*
+/'/!/select/all
+/'/!/unpack/drop
+/'/!/drop
+/'/!/addresses
+/'/!/rot
+/'/!/swap
+/'/!/gather
+/'/!/nip
+/'/!/join
+/'/</_e
+/!/bundle/all
+/>/_x
+/!/swap
+/s//bundle/store
+/!/assign
+/</_x
+
+/#/ /'/>/_e
+/#/ /'/!/swap
+/#/ /'/!/replace
+/#/ /'/</_e
+/#/ /'/!/bundle/all
+/#/ /'/!/make/bundle
+/#/ /'/!/swap
+/'/!/make/bundle
+/'/!/swap
+/'/!/push
+/'/!/bundle/store
+/!/bundle/all
+/>/_x
+/!/swap
+/s//message/store
+/!/assign
+/</_x
+
+
+/'/!/unpack/drop
+/'/!/is/bundle
+/'/$/message/store
+/'/!/blob/toelem
+/'/!/swap
+/'/$/bundle/store
+/'/!/blob/toelem
+/'/!/swap
+/'/!/if
+/!/bundle/all
+/>/_x
+/!/swap
+/s//result/store
+/!/assign
+/</_x
+
+/#/ Bundle the whole stack and print it.
+/'/!/repl/format
+/'/!/swap
+
+/'/!/count/items
+/'/!/make/bundle
+/'/!/swap
+/'/$/result/store
+/'/!/blob/toelem
+/'/!/swap
+/'/!/if
+/'/!/drop
+/'/</_e
+
+/'/$/ansi/color/cyan
+/'/!/color/text
+/'/!/println
+/!/bundle/all
+/>/_x
+/!/swap
+/s//repl/print
+/!/assign
+
+/$/o/parse
+/s//repl/parse
+/!/assign
+
+/$/oscbn/println
+/s//repl/format
+/!/assign
+
+/</_x
+
+/#/ this is needed because the printer unpacks the
+/#/ topmost bundle on the stack
+/!/make/bundle
+
+/#/ /s/./o.se.oscript/test.ose
+/#/ /!/load
+
+/#/ ##################################################
+
+/#/ /s/./o.se.oscript/test.oscript
+/#/ /!/read
+/#/ /!/nip
+
+/#/ /#/ 's'
+/#/ /i/115
+/#/ /!/blob/totype
+
+/#/ /!/o/parse
+/#/ /!/debug
+/#/ /!/exec1
+/#/ /!/drop
+/#/ /!/debug
+/#/ /<</_x
+/#/ /!/clear

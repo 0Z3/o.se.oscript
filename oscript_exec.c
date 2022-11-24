@@ -282,6 +282,24 @@ static void oscript_exec(ose_bundle osevm)
     ose_drop(vm_c);             // drop our own exec command
     ose_copyBundle(vm_c, vm_d);
     ose_clear(vm_c);
+
+    // push semaphores onto the top and bottom of the env
+    ose_bundleAll(vm_e);
+    ose_pushBundle(vm_e);
+    ose_swap(vm_e);
+    ose_unpackDrop(vm_e);
+    ose_pushBundle(vm_e);
+}
+
+static void oscript_finalizeTopLevelExec(ose_bundle osevm)
+{
+    ose_bundle vm_s = OSEVM_STACK(osevm);
+    ose_bundle vm_e = OSEVM_ENV(osevm);
+    ose_bundleAll(vm_e);
+    ose_moveElem(vm_s, vm_e);
+    ose_unpackDrop(vm_e);
+    ose_rollBottom(vm_e);
+    ose_unpackDrop(vm_e);
 }
 
 static void oscript_finalizeElem(ose_bundle osevm)
@@ -324,11 +342,18 @@ static void oscript_finalizeElem(ose_bundle osevm)
         if(ose_peekType(vm_s) == OSETT_MESSAGE
            && ose_peekMessageArgType(vm_s) == OSETT_STRING)
         {
-            ose_moveStringToAddress(vm_s);
-            ose_bundleAll(vm_e);
-            ose_moveElem(vm_s, vm_e);
-            ose_swap(vm_e);
-            ose_unpackDrop(vm_e);
+            if(strlen(ose_peekString(vm_s)) == 0)
+            {
+                ose_drop(vm_s);
+            }
+            else
+            {
+                ose_moveStringToAddress(vm_s);
+                ose_bundleAll(vm_e);
+                ose_moveElem(vm_s, vm_e);
+                ose_swap(vm_e);
+                ose_unpackDrop(vm_e);
+            }
         }
         else
         {
@@ -361,27 +386,77 @@ static void oscript_finalizeExec(ose_bundle osevm)
 {
     ose_bundle vm_s = OSEVM_STACK(osevm);
     ose_bundle vm_e = OSEVM_ENV(osevm);
-    int32_t o = ose_getLastBundleElemOffset(vm_s);
-    int32_t ss = ose_readInt32(vm_s, o);
-    int32_t se = ose_readSize(vm_e);
-    int32_t diff = ss - se;
-    if(se > OSE_BUNDLE_HEADER_LEN)
+    /* 
+       The stack has a bundle that looks like this:
+		#bundle
+			<our stuff>
+			...
+			#bundle <--semaphore
+			<not our stuff>
+			#bundle <--semaphore
+			<more of our stuff>
+			...
+    */
+    char *b = ose_getBundlePtr(vm_s);
+    int32_t o = OSE_BUNDLE_HEADER_LEN;
+    int32_t s = ose_readInt32(vm_s, o);
+    int32_t oo = o + 4 + OSE_BUNDLE_HEADER_LEN;
+    int32_t ss;
+    /* 
+       seek forward in the bundle to the first semaphore, and
+       rewrite the bundle so that it only contains our stuff 
+    */
+    while(oo < o + s)
     {
-        if(diff > 0)
+        ss = ose_readInt32(vm_s, oo);
+        if(ss == OSE_BUNDLE_HEADER_LEN
+           && !strcmp(b + oo + 4,
+                      OSE_BUNDLE_ID))
         {
-            char *b = ose_getBundlePtr(vm_s);
-            ose_writeInt32(vm_s, o, diff + OSE_BUNDLE_HEADER_LEN);
-            memset(b + o + 4 + diff + OSE_BUNDLE_HEADER_LEN,
-                   0, se - OSE_BUNDLE_HEADER_LEN);
-            ose_decSize(vm_s, se - OSE_BUNDLE_HEADER_LEN);
+            ose_writeInt32(vm_s, o, oo - o - 4);
+            ose_writeInt32(vm_s, oo, s - (oo - o));
+            /* ose_drop(vm_s); */
+            break;
         }
-        else
-        {
-            ose_drop(vm_s);
-            return;
-        }
+        oo += ss + 4;
     }
+    /* 
+       continue seeking forward in the bundle to find the final
+       semaphore 
+    */
+    o = oo;
+    s = ose_readInt32(vm_s, o);
+    oo += OSE_BUNDLE_HEADER_LEN + 4;
+    int32_t lso;
+    while(oo < o + s)
+    {
+        ss = ose_readInt32(vm_s, oo);
+        if(ss == OSE_BUNDLE_HEADER_LEN
+           && !strcmp(b + oo + 4,
+                      OSE_BUNDLE_ID))
+        {
+            lso = oo;
+        }
+        oo += ss + 4;
+    }
+    /* 
+       rewrite the bundle so that our stuff is in its own at 
+       the end
+    */
+    ose_writeInt32(vm_s, o, lso - o - 4);
+    ose_writeInt32(vm_s, lso, (oo - lso) - 4);
+    /* 
+       discard the stuff that's not ours, and combine the two
+       bundles
+    */
+    ose_nip(vm_s);
+    ose_swap(vm_s);
     ose_popAllDropBundle(vm_s);
+    ose_swap(vm_s);
+    ose_unpackDrop(vm_s);
+    ose_writeInt32(vm_s, OSE_BUNDLE_HEADER_LEN,
+                   ose_readSize(vm_s)
+                   - (4 + OSE_BUNDLE_HEADER_LEN));
 }
 
 static void oscript_finalizeExecLambdaApplication(ose_bundle osevm)
@@ -412,6 +487,11 @@ void oscript_exec_load(ose_bundle vm_s)
     ose_pushMessage(vm_s, "/o/finalize/elem",
                     strlen("/o/finalize/elem"),
                     1, OSETT_ALIGNEDPTR, oscript_finalizeElem);
+    ose_pushMessage(vm_s, "/o/finalize/toplevelexec",
+                    strlen("/o/finalize/toplevelexec"),
+                    1,
+                    OSETT_ALIGNEDPTR,
+                    oscript_finalizeTopLevelExec);
     ose_pushMessage(vm_s, "/o/apply",
                     strlen("/o/apply"),
                     1, OSETT_ALIGNEDPTR, oscript_apply);

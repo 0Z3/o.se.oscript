@@ -54,6 +54,7 @@ LDFLAGS=-fvisibility=hidden -shared \
 	-Wl,-U,_ose_builtin_map \
 	-Wl,-U,_ose_builtin_if \
 	-Wl,-U,_ose_builtin_toInt32 \
+	-Wl,-U,_ose_readFile \
 	-flat_namespace
 else
 LDFLAGS=-fvisibility=hidden -shared \
@@ -65,6 +66,7 @@ LDFLAGS=-fvisibility=hidden -shared \
 	-Wl,-U,_ose_builtin_map \
 	-Wl,-U,_ose_builtin_if \
 	-Wl,-U,_ose_builtin_toInt32 \
+	-Wl,-U,_ose_readFile \
 	-flat_namespace
 endif
 

@@ -9,6 +9,7 @@
 #include "ose_print.h"
 #include "ose_errno.h"
 #include "ose_builtins.h"
+#include "sys/ose_load.h"
 
 #include "antlr4-runtime.h"
 #include "oscriptLexer.h"
@@ -116,7 +117,7 @@ static void oscript_parse_impl(const char * const str,
     Any a = visitor->visitTopLevelBundle(tree);
 }
 
-void oscript_parseExpr(ose_bundle bundle)
+static void oscript_parseExpr(ose_bundle bundle)
 {
     ose_assert(ose_bundleHasAtLeastNElems(bundle, 1));
     ose_assert(ose_peekType(bundle) == OSETT_MESSAGE);
@@ -133,7 +134,7 @@ void oscript_parseExpr(ose_bundle bundle)
     }
 }
 
-void oscript_parse(ose_bundle osevm)
+static void oscript_parse(ose_bundle osevm)
 {
     ose_bundle vm_s = OSEVM_STACK(osevm);
     if(ose_bundleIsEmpty(vm_s))
@@ -144,11 +145,64 @@ void oscript_parse(ose_bundle osevm)
     ose_nip(vm_s);
 }
 
+static void oscript_load(ose_bundle osevm)
+{
+    ose_bundle vm_s = OSEVM_STACK(osevm);
+    ose_bundle vm_c = OSEVM_CONTROL(osevm);
+    ose_bundle vm_i = OSEVM_INPUT(osevm);
+    if(!ose_bundleHasAtLeastNElems(vm_s, 1))
+    {
+        ose_errno_set(vm_s, OSE_ERR_ELEM_COUNT);
+        return;
+    }
+    if(ose_peekType(vm_s) != OSETT_BUNDLE)
+    {
+        ose_errno_set(vm_s, OSE_ERR_ELEM_TYPE);
+        return;
+    }
+    ose_unpackDrop(vm_s);
+    if(!ose_bundleHasAtLeastNElems(vm_s, 1))
+    {
+        ose_errno_set(vm_s, OSE_ERR_ELEM_COUNT);
+        return;
+    }
+    if(ose_peekType(vm_s) != OSETT_MESSAGE)
+    {
+        ose_errno_set(vm_s, OSE_ERR_ELEM_TYPE);
+        return;
+    }
+    if(ose_peekMessageArgType(vm_s) != OSETT_STRING)
+    {
+        ose_errno_set(vm_s, OSE_ERR_ITEM_TYPE);
+        return;
+    }
+    const char * const str = ose_peekString(vm_s);
+    ose_readFile(vm_s, str);
+    ose_nip(vm_s);
+    ose_blobToType_impl(vm_s, OSETT_STRING);
+    // oscript_parse(vm_s);
+    /* ose_exec1(vm_s); */
+    /* ose_drop(vm_s); */
+
+    ose_pushString(vm_c, "/!/drop");
+    ose_swap(vm_c);
+    ose_pushString(vm_c, "/!/exec1");
+    ose_swap(vm_c);
+    ose_pushString(vm_c, "/!/o/parse");
+    ose_swap(vm_c);
+
+    ose_2drop(vm_i);
+    ose_pushString(vm_i, "/!/o/finalize/toplevelexec");
+}
+
 void oscript_parser_load(ose_bundle vm_s)
 {
     ose_pushMessage(vm_s, "/o/parse",
                     strlen("/o/parse"),
                     1, OSETT_ALIGNEDPTR, oscript_parse);
+    ose_pushMessage(vm_s, "/o/load",
+                    strlen("/o/load"),
+                    1, OSETT_ALIGNEDPTR, oscript_load);
 }
 
 #ifdef __cplusplus

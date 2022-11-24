@@ -27,6 +27,13 @@ using namespace oscript;
 #define TRACE(c)
 #endif
 
+#define OSCRIPTVISITORIMPL_LINENOS
+#ifdef OSCRIPTVISITORIMPL_LINENOS
+
+#else
+
+#endif
+
 oscriptVisitorImpl::oscriptVisitorImpl(ose_bundle b)
 {
     bundle = b;
@@ -93,35 +100,24 @@ oscriptVisitorImpl::visitFuncallElem(oscriptParser::FuncallElemContext *context)
     return visit(context->funcall());
 }
 
-// antlrcpp::Any
-// oscriptVisitorImpl::visitFuncallElem(oscriptParser::FuncallElemContext *context)
-// {
-//     TRACE(context);
-//     visit(context->args);
-//     if(ose_peekType(bundle) == OSETT_BUNDLE)
-//     {
-//         ose_elemToBlob(bundle);
-//         ose_setTypetag_impl(bundle, OSETT_BUNDLE);
-//     }
-//     visit(context->fn);
-//     if(ose_peekType(bundle) == OSETT_BUNDLE)
-//     {
-//         ose_elemToBlob(bundle);
-//         ose_setTypetag_impl(bundle, OSETT_BUNDLE);
-//     }
-//     ose_pushString(bundle, "/!/o/apply");
-//     ose_push(bundle);
-//     ose_push(bundle);
-//     return context;
-// }
-
 antlrcpp::Any
 oscriptVisitorImpl::visitBind(oscriptParser::BindContext *context)
 {
     TRACE(context);
-    // ose_pushBundle(bundle);
-    // int32_t o = ose_getLastBundleElemOffset(bundle);
-    // int32_t bs = ose_readSize(bundle);
+                    
+    // if(level == 0)
+    {
+        // printf("line: %zu\n", context->getStart()->getLine());
+        // char buf[256];
+        // sprintf(buf, "%zu", context->getStart()->getLine());
+        // ose_pushMessage(bundle,
+        //                 "/line",
+        //                 strlen("/line"),
+        //                 1,
+        //                 OSETT_INT32, context->getStart()->getLine());
+
+    }
+
     bool haverhs = false;
     if(context->oscBundleElem())
     {
@@ -158,8 +154,6 @@ oscriptVisitorImpl::visitBind(oscriptParser::BindContext *context)
     	ose_push(bundle);
     }
     ose_moveStringToAddress(bundle);
-    // int32_t nbs = ose_readSize(bundle);
-    // ose_writeInt32(bundle, o, OSE_BUNDLE_HEADER_LEN + (nbs - bs));
     if(level == 0)
     {
         // top-level bind:
@@ -250,21 +244,8 @@ oscriptVisitorImpl::visitLazyBundle(oscriptParser::LazyBundleContext *context)
  	TRACE(context);
     ++level;
     ose_pushBundle(bundle);
-    // ose_pushBundle(bundle);
     int32_t o = ose_getLastBundleElemOffset(bundle);
     int32_t bs = ose_readSize(bundle);
-    // if(inside_funcall)
-    // {
-    //     inside_funcall = 0;
-    // 	for(int i = context->oscBundleElem().size() - 1;
-    //         i >= 0;
-    //         --i)
-    //     {
-    //         auto e = context->oscBundleElem()[i];
-    //         visit(e);
-    //     }
-    // }
-    // else
     {
         for(int i = 0; i < context->oscBundleElem().size(); ++i)
         {
@@ -275,9 +256,7 @@ oscriptVisitorImpl::visitLazyBundle(oscriptParser::LazyBundleContext *context)
     
     int32_t nbs = ose_readSize(bundle);
     ose_writeInt32(bundle, o, OSE_BUNDLE_HEADER_LEN + (nbs - bs));
-    // ose_push(bundle);
     ose_elemToBlob(bundle);
-    // ose_setTypetag_impl(bundle, OSETT_BUNDLE);
     --level;
     return context;
 }
@@ -290,18 +269,6 @@ oscriptVisitorImpl::visitEagerBundle(oscriptParser::EagerBundleContext *context)
     ose_pushBundle(bundle);
     int32_t o = ose_getLastBundleElemOffset(bundle);
     int32_t bs = ose_readSize(bundle);
-    // if(inside_funcall)
-    // {
-    //     inside_funcall = 0;
-    // 	for(int i = context->oscBundleElem().size() - 1;
-    //         i >= 0;
-    //         --i)
-    //     {
-    //         auto e = context->oscBundleElem()[i];
-    //         visit(e);
-    //     }
-    // }
-    // else
     {
         for(int i = 0; i < context->oscBundleElem().size(); ++i)
         {
@@ -312,8 +279,6 @@ oscriptVisitorImpl::visitEagerBundle(oscriptParser::EagerBundleContext *context)
     
     int32_t nbs = ose_readSize(bundle);
     ose_writeInt32(bundle, o, OSE_BUNDLE_HEADER_LEN + (nbs - bs));
-    // ose_elemToBlob(bundle);
-    // ose_setTypetag_impl(bundle, OSETT_BUNDLE);
     --level;
     return context;
 }
@@ -367,10 +332,6 @@ oscriptVisitorImpl::visitArgs(oscriptParser::ArgsContext *context)
         ose_elemToBlob(bundle);
         ose_setTypetag_impl(bundle, OSETT_BUNDLE);
     }
-    // else if(context->funcall())
-    // {
-    //     visit(context->funcall());
-    // }
     return context;
 }
 

@@ -46,6 +46,7 @@ OSCRIPT_WRAP_BUILTIN_BINOP(and);
 OSCRIPT_WRAP_BUILTIN_BINOP(or);
 
 OSCRIPT_WRAP_BUILTIN(nth);
+OSCRIPT_WRAP_BUILTIN(blobToElem);
 
 static void oscript_defn(ose_bundle osevm)
 {
@@ -217,6 +218,9 @@ void oscript_lib_load(ose_bundle vm_s)
     OSCRIPT_PUSHFN(rest);
     OSCRIPT_PUSHFN(butlast);
 
+    ose_pushMessage(vm_s, "/o/blob/toelem",
+                    strlen("/o/blob/toelem"),
+                    1, OSETT_ALIGNEDPTR, oscript_blobToElem);
     OSCRIPT_PUSHFN(route);
     OSCRIPT_PUSHFN(map);
     OSCRIPT_PUSHFN(if);

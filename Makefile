@@ -7,7 +7,11 @@ CPP=clang++
 LIBOSE_DIR=../libose
 
 # this produces a var called $LD_UNDEF_FLAGS
-include $(LIBOSE_DIR)/ose_linker_flags.mk
+ifeq ($(shell uname), Darwin)
+include $(LIBOSE_DIR)/ose_linker_flags_macos.mk
+else ifeq ($(shell uname), Linux)
+include $(LIBOSE_DIR)/ose_linker_flags_linux.mk
+endif
 
 MOD_CPP_FILES=\
 	$(BASENAME)VisitorImpl\

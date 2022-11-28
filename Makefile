@@ -5,13 +5,9 @@ CC=clang
 CPP=clang++
 
 LIBOSE_DIR=../libose
-OSE_FILES=\
-	ose\
-	ose_util\
-	ose_stackops\
-	ose_match\
-	ose_context\
-	ose_print
+
+# this produces a var called $LD_UNDEF_FLAGS
+include $(LIBOSE_DIR)/ose_linker_flags.mk
 
 MOD_CPP_FILES=\
 	$(BASENAME)VisitorImpl\
@@ -23,7 +19,8 @@ MOD_C_FILES=\
 	ose_$(BASENAME)\
 	$(BASENAME)_exec\
 	$(BASENAME)_lib\
-	$(BASENAME)_types
+	$(BASENAME)_types\
+	$(BASENAME)_print\
 
 ANTLR4_DIR=antlr4
 ANTLR4_RUNTIME_DIR=$(ANTLR4_DIR)/runtime/Cpp
@@ -33,6 +30,8 @@ ANTLR4_LIB_DIR=$(ANTLR4_RUNTIME_DIR)/run/usr/local/lib
 INCLUDES=-I. -I$(LIBOSE_DIR) -I$(ANTLR4_INCLUDE_DIR)
 
 DEFINES=-DHAVE_OSE_ENDIAN_H \
+	-DOSE_CONF_PROVIDE_TYPE_DOUBLE\
+	-DOSE_CONF_PROVIDE_TYPE_TIMETAG\
 	-DOSE_GETPAYLOADITEMLENGTH_HOOK=osevm_getPayloadItemLength_hook \
 	-DOSE_GETPAYLOADITEMSIZE_HOOK=osevm_getPayloadItemSize_hook \
 	-DOSE_PPRINTPAYLOADITEM_HOOK=osevm_pprintPayloadItem_hook
@@ -46,28 +45,12 @@ CPPFLAGS_RELEASE=-Wall -O3 --std=c++17 -fPIC
 ifeq ($(shell uname), Darwin)
 LDFLAGS=-fvisibility=hidden -shared \
 	-Wl,-exported_symbol,_ose_main \
-	-Wl,-U,_osevm_getPayloadItemLength_hook \
-	-Wl,-U,_osevm_getPayloadItemSize_hook \
-	-Wl,-U,_osevm_pprintPayloadItem_hook \
-	-Wl,-U,_ose_builtin_lookupInEnv \
-	-Wl,-U,_ose_builtin_assignStackToEnv \
-	-Wl,-U,_ose_builtin_map \
-	-Wl,-U,_ose_builtin_if \
-	-Wl,-U,_ose_builtin_toInt32 \
-	-Wl,-U,_ose_readFile \
-	-flat_namespace
+	-flat_namespace \
+	$(LD_UNDEF_FLAGS)
 else
 LDFLAGS=-fvisibility=hidden -shared \
-	-Wl,-U,_osevm_getPayloadItemLength_hook \
-	-Wl,-U,_osevm_getPayloadItemSize_hook \
-	-Wl,-U,_osevm_pprintPayloadItem_hook \
-	-Wl,-U,_ose_builtin_lookupInEnv \
-	-Wl,-U,_ose_builtin_assignStackToEnv \
-	-Wl,-U,_ose_builtin_map \
-	-Wl,-U,_ose_builtin_if \
-	-Wl,-U,_ose_builtin_toInt32 \
-	-Wl,-U,_ose_readFile \
-	-flat_namespace
+	-flat_namespace \
+	$(LD_UNDEF_FLAGS)
 endif
 
 release: CFLAGS=$(CFLAGS_RELEASE)
@@ -78,16 +61,13 @@ debug: CFLAGS=$(CFLAGS_DEBUG)
 debug: CPPFLAGS=$(CPPFLAGS_DEBUG)
 debug: ose_$(BASENAME).so
 
-$(OSE_FILES:=.o): %.o: $(LIBOSE_DIR)/%.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) $(DEFINES) $< -o $(notdir $@)
-
 $(MOD_CPP_FILES:=.o): %.o: %.cpp $(ANTLR4_INCLUDE_DIR)
 	$(CPP) -c $(CPPFLAGS) $(INCLUDES) $(DEFINES) $< -o $@
 
 $(MOD_C_FILES:=.o): %.o: %.c $(ANTLR4_INCLUDE_DIR)
 	$(CC) -c $(CFLAGS) $(INCLUDES) $(DEFINES) $< -o $@
 
-ose_$(BASENAME).so: $(OSE_FILES:=.o) $(MOD_C_FILES:=.o) $(MOD_CPP_FILES:=.o)
+ose_$(BASENAME).so: $(MOD_C_FILES:=.o) $(MOD_CPP_FILES:=.o)
 	$(CPP) $(LDFLAGS) -o o.se.$(BASENAME).so $^ $(ANTLR4_LIB_DIR)/libantlr4-runtime.a
 
 $(LIBOSE_DIR)/sys/ose_endian.h:

@@ -6,27 +6,105 @@
 /!/load
 /<</_x
 
-/s/./o.se.oscbn/o.se.oscbn.so
-/!/load
-/<</_x
+/#/ function to call
+/#/ oscript unwrapper name
+/'/!/string/toaddress/move
+/'/!/swap
+/'/!/make/bundle
+/'/s//!/unpack/drop
+/'/!/rot
+/'/!/push
+/'/!/push
+/'/!/push
+/'/>/_x
+/'/!/swap
+/'/!/replace
+/'/</_x
+/!/bundle/all
+/>/_x
+/!/swap
+/s//_o/unwrap
+/!/assign
+/</_x
+
+/s//!/todouble
+/s//o/todouble
+/!/_o/unwrap
+
+/s//!/typetag/set
+/s//o/typetag/set
+/!/_o/unwrap
+
+/s//!/push
+/s//o/push
+/!/_o/unwrap
+
+/s//!/assign
+/s//o/assign
+/!/_o/unwrap
 
 /s/./o.se.time/o.se.time.so
 /!/load
 /<</_x
 
+/s//!/time/now
+/s//o/time/now
+/!/_o/unwrap
+
 /s/./o.se.udp/o.se.udp.so
 /!/load
 /<</_x
 
+/s//!/udp/receive
+/s//o/udp/receive
+/!/_o/unwrap
+
+/s//!/udp/sock/create
+/s//o/udp/sock/create
+/!/_o/unwrap
+
+/s//!/udp/sendto
+/s//o/udp/sendto
+/!/_o/unwrap
+
+/s//!/udp/close
+/s//o/udp/close
+/!/_o/unwrap
+
+/s//!/udp/recv
+/s//o/udp/recv
+/!/_o/unwrap
+
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/hook/parse/pre
+/!/assign
+/</_x
+
+/#/ /'/!/o/format
+/#/ /'/!/println
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/hook/parse/post
+/!/assign
+/</_x
+
+/'/!/o/hook/parse/pre
+/$/o/parse
+/!/pop/all/drop
+/'/!/!
+/'/!/o/hook/parse/post
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/parse
+/!/assign
+/</_x
 
 
-/#/ /o/load : ({["/$/filename", "/!/read", "/!/nip", "/i/115", "/!/blob/totype", "/!/dup", "/!/println", "/!/o/parse", "/!/oscbn/println", "/!/println", "/!/debug", "/!/exec1", "/!/drop", "/!/debug"]}, "/filename") /o/defn
-/#/ /!/o/parse
-/#/ /!/exec1
-/#/ /!/drop
-/#/ /<</_x
-
-/o/println : {["/!/unpack/drop", "/!/oscbn/println", "/!/println"]}
+/o/println : {["/!/unpack/drop", "/!/o/formatln", "/!/println"]}
 /!/o/parse
 /!/exec1
 /!/drop
@@ -79,6 +157,19 @@
 /</_x
 
 /#/ Bundle the whole stack and print it.
+/#/ make sure there's something on top of the stack to print
+/'/!/count/elems
+/'/!/make/bundle
+/'/s//!/make/bundle
+/'/!/push
+/'/!/make/bundle
+/'/!/swap
+/'/!/rot
+/i/0
+/'/!/eql
+/'/!/if
+/'/!/drop
+
 /'/!/repl/format
 /'/!/swap
 
@@ -105,7 +196,7 @@
 /s//repl/parse
 /!/assign
 
-/$/oscbn/println
+/$/o/formatln
 /s//repl/format
 /!/assign
 
@@ -117,7 +208,3 @@
 /s//wb
 /!/assign
 /</lo
-
-/#/ this is needed because the printer unpacks the
-/#/ topmost bundle on the stack
-/!/make/bundle

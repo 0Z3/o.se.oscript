@@ -7,7 +7,6 @@
 #include "ose_stackops.h"
 #include "ose_assert.h"
 #include "ose_vm.h"
-#include "ose_symtab.h"
 #include "ose_print.h"
 #include "ose_errno.h"
 #include "ose_builtins.h"
@@ -15,20 +14,32 @@
 #include "oscript_lib.h"
 #include "oscript_types.h"
 
-#define OSCRIPT_WRAP_BUILTIN_BINOP(name)        \
-    static void oscript_ ##name (ose_bundle osevm) \
-    {                                           \
-        ose_bundle vm_s = OSEVM_STACK(osevm);   \
-        ose_popAllDrop(vm_s);                   \
-        ose_ ##name (vm_s);                      \
+#define OSCRIPT_WRAP_BUILTIN_BINOP(name)            \
+    static void oscript_ ##name (ose_bundle osevm)  \
+    {                                               \
+        ose_bundle vm_s = OSEVM_STACK(osevm);       \
+        enum ose_errno e = OSE_ERR_NONE;            \
+        ose_popAllDrop(vm_s);                       \
+        ose_ ##name (vm_s);                         \
+        if((e = ose_errno_get(vm_s)))               \
+        {                                           \
+            ose_errno_set(osevm, e);                \
+            ose_errno_set(vm_s, OSE_ERR_NONE);      \
+        }                                           \
     }
 
-#define OSCRIPT_WRAP_BUILTIN(name)              \
-    static void oscript_ ##name (ose_bundle osevm) \
-    {                                           \
-        ose_bundle vm_s = OSEVM_STACK(osevm);   \
-        ose_unpackDrop(vm_s);                   \
-        ose_ ##name (vm_s);                      \
+#define OSCRIPT_WRAP_BUILTIN(name)                  \
+    static void oscript_ ##name (ose_bundle osevm)  \
+    {                                               \
+        ose_bundle vm_s = OSEVM_STACK(osevm);       \
+        enum ose_errno e = OSE_ERR_NONE;            \
+        ose_unpackDrop(vm_s);                       \
+        ose_ ##name (vm_s);                         \
+        if((e = ose_errno_get(vm_s)))               \
+        {                                           \
+            ose_errno_set(osevm, e);                \
+            ose_errno_set(vm_s, OSE_ERR_NONE);      \
+        }                                           \
     }
 
 OSCRIPT_WRAP_BUILTIN_BINOP(add);

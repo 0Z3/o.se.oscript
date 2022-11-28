@@ -5,7 +5,6 @@
 #include "ose_stackops.h"
 #include "ose_assert.h"
 #include "ose_vm.h"
-#include "ose_symtab.h"
 #include "ose_print.h"
 #include "ose_errno.h"
 #include "ose_builtins.h"
@@ -14,6 +13,7 @@
 #include "oscript_lib.h"
 #include "oscript_types.h"
 #include "oscript_parser.h"
+#include "oscript_print.h"
 
 __attribute__((visibility("default")))
 void ose_main(ose_bundle osevm)
@@ -25,6 +25,7 @@ void ose_main(ose_bundle osevm)
     oscript_lib_load(vm_s);
     oscript_types_load(vm_s);
     oscript_parser_load(vm_s);
+    oscript_print_load(vm_s);
     OSE_END_BUNDLE(vm_s);
 }
 

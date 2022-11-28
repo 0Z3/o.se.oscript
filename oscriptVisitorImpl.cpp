@@ -20,7 +20,7 @@ using namespace antlr4;
 using namespace antlrcpp;
 using namespace oscript;
 
-#define OSCRIPTVISITORIMPL_TRACE
+//#define OSCRIPTVISITORIMPL_TRACE
 #ifdef OSCRIPTVISITORIMPL_TRACE
 #define TRACE(c) cerr << __func__ << ":" << __LINE__ << ": " << c->getText() << "\n";
 #else

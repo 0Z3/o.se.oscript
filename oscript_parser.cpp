@@ -5,7 +5,6 @@
 #include "ose_stackops.h"
 #include "ose_assert.h"
 #include "ose_vm.h"
-#include "ose_symtab.h"
 #include "ose_print.h"
 #include "ose_errno.h"
 #include "ose_builtins.h"

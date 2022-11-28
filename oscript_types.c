@@ -7,7 +7,6 @@
 #include "ose_stackops.h"
 #include "ose_assert.h"
 #include "ose_vm.h"
-#include "ose_symtab.h"
 #include "ose_print.h"
 #include "ose_errno.h"
 #include "ose_builtins.h"
@@ -120,45 +119,45 @@ void oscript_evalType(ose_bundle osevm)
         const char tt = ose_peekMessageArgType(vm_s);
         switch(tt)
         {
-        /* case OSCRIPT_TYPETAG_LOOKUP: */
-        /*     ose_itemToBlob(vm_s); */
-        /*     ose_pushInt32(vm_s, (int32_t)OSETT_STRING); */
-        /*     ose_blobToType(vm_s); */
-        /*     ose_builtin_lookupInEnv(osevm); */
-        /*     ose_assert(0); */
-        /*     break; */
-        /* case OSCRIPT_TYPETAG_ASSIGN: */
-        /*     ose_setTypetag_impl(vm_s, OSETT_BLOB); */
-        /*     ose_blobToElem(vm_s); */
-        /*     ose_pushBundle(vm_s); */
-        /*     ose_swap(vm_s); */
-        /*     ose_push(vm_s); */
-        /*     ose_pushString(vm_s, "/!/o/assign"); */
-        /*     ose_push(vm_s); */
+            /* case OSCRIPT_TYPETAG_LOOKUP: */
+            /*     ose_itemToBlob(vm_s); */
+            /*     ose_pushInt32(vm_s, (int32_t)OSETT_STRING); */
+            /*     ose_blobToType(vm_s); */
+            /*     ose_builtin_lookupInEnv(osevm); */
+            /*     ose_assert(0); */
+            /*     break; */
+            /* case OSCRIPT_TYPETAG_ASSIGN: */
+            /*     ose_setTypetag_impl(vm_s, OSETT_BLOB); */
+            /*     ose_blobToElem(vm_s); */
+            /*     ose_pushBundle(vm_s); */
+            /*     ose_swap(vm_s); */
+            /*     ose_push(vm_s); */
+            /*     ose_pushString(vm_s, "/!/o/assign"); */
+            /*     ose_push(vm_s); */
         
-        /*     ose_pushString(vm_c, "/</_e"); */
-        /*     ose_swap(vm_c); */
-        /*     ose_pushString(vm_c, "/!/exec1"); */
-        /*     ose_swap(vm_c); */
-        /*     ose_assert(0); */
-        /*     break; */
-        /* case OSCRIPT_TYPETAG_FUNCALL: */
-        /*     ose_setTypetag_impl(vm_s, OSETT_BLOB); */
-        /*     ose_blobToElem(vm_s); */
-        /*     ose_unpackDrop(vm_s); */
-        /*     { */
-        /*         ose_drop(vm_c); */
-        /*         ose_pushString(vm_c, "/!/o/apply"); */
-        /*         ose_moveElem(vm_s, vm_c); */
-        /*         // ose_pushString(vm_c, "/!/o/eval"); */
-        /*         ose_pushString(vm_c, "/!/o/prepargs"); */
-        /*         ose_moveElem(vm_s, vm_c); */
-        /*         ose_pushMessage(vm_c, */
-        /*                         OSE_ADDRESS_ANONVAL, */
-        /*                         OSE_ADDRESS_ANONVAL_LEN, 0); */
-        /*     } */
-        /*     ose_assert(0); */
-        /*     break; */
+            /*     ose_pushString(vm_c, "/</_e"); */
+            /*     ose_swap(vm_c); */
+            /*     ose_pushString(vm_c, "/!/exec1"); */
+            /*     ose_swap(vm_c); */
+            /*     ose_assert(0); */
+            /*     break; */
+            /* case OSCRIPT_TYPETAG_FUNCALL: */
+            /*     ose_setTypetag_impl(vm_s, OSETT_BLOB); */
+            /*     ose_blobToElem(vm_s); */
+            /*     ose_unpackDrop(vm_s); */
+            /*     { */
+            /*         ose_drop(vm_c); */
+            /*         ose_pushString(vm_c, "/!/o/apply"); */
+            /*         ose_moveElem(vm_s, vm_c); */
+            /*         // ose_pushString(vm_c, "/!/o/eval"); */
+            /*         ose_pushString(vm_c, "/!/o/prepargs"); */
+            /*         ose_moveElem(vm_s, vm_c); */
+            /*         ose_pushMessage(vm_c, */
+            /*                         OSE_ADDRESS_ANONVAL, */
+            /*                         OSE_ADDRESS_ANONVAL_LEN, 0); */
+            /*     } */
+            /*     ose_assert(0); */
+            /*     break; */
         case OSCRIPT_TYPETAG_LAMBDA:
             ;
             break;
@@ -170,6 +169,55 @@ void oscript_evalType(ose_bundle osevm)
             break;
         }
     }
+}
+
+const char * const
+oscript_lambda_getParam(struct oscript_lambda_params p,
+                        int32_t n)
+{
+    if(n >= p.nparams)
+    {
+        return NULL;
+    }
+    if(n < OSCRIPT_LAMBDA_PARAMS_CACHE_SIZE)
+    {
+        return p.params + p.cache[n];
+    }
+    else
+    {
+        char *ptr = (char *)p.params;
+        for(int32_t i = 0; i < n; ++i)
+        {
+            ptr += ose_pstrlen(ptr);
+        }
+        return ptr;
+    }
+}
+
+struct oscript_lambda_params
+oscript_lambda_getParams(ose_bundle bundle,
+                         int32_t offset)
+{
+    int32_t o = offset + 4 + OSE_BUNDLE_HEADER_LEN;
+    o += ose_readInt32(bundle, o) + 4;
+    const int32_t tto = o + 4
+        + ose_pstrlen(ose_readString(bundle, o + 4));
+    const int32_t ntt = strlen(ose_readString(bundle, tto)) - 1;
+    const int32_t plo = tto + ose_pnbytes(ntt + 1);
+    struct oscript_lambda_params p =
+    {
+        ntt, ose_getBundlePtr(bundle) + plo, {}
+    };
+    int32_t oo = plo;
+    for(int i = 0;
+        i < OSCRIPT_LAMBDA_PARAMS_CACHE_SIZE && i < ntt;
+        ++i)
+    {
+        const char * const s = ose_readString(bundle, oo);
+        p.cache[i] = oo - plo;
+        oo += ose_pstrlen(s);
+    }
+    return p;
 }
 
 void oscript_types_load(ose_bundle vm_s)

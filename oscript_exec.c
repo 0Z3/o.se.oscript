@@ -7,7 +7,6 @@
 #include "ose_stackops.h"
 #include "ose_assert.h"
 #include "ose_vm.h"
-#include "ose_symtab.h"
 #include "ose_print.h"
 #include "ose_errno.h"
 #include "ose_builtins.h"
@@ -162,6 +161,14 @@ static void oscript_apply(ose_bundle osevm)
     }
     ose_pushString(vm_c, "/!/apply");
     ose_swap(vm_c);
+}
+
+static void oscript_funcall(ose_bundle osevm)
+{
+    ose_bundle vm_s = OSEVM_STACK(osevm);
+    ose_bundleAll(vm_s);
+    ose_pop(vm_s);
+    oscript_apply(osevm);
 }
 
 static void oscript_execLambdaApplication(ose_bundle osevm)
@@ -385,7 +392,6 @@ static void oscript_finalizeElem(ose_bundle osevm)
 static void oscript_finalizeExec(ose_bundle osevm)
 {
     ose_bundle vm_s = OSEVM_STACK(osevm);
-    ose_bundle vm_e = OSEVM_ENV(osevm);
     /* 
        The stack has a bundle that looks like this:
 		#bundle
@@ -466,7 +472,10 @@ static void oscript_finalizeExecLambdaApplication(ose_bundle osevm)
     ose_pop(vm_s);
     ose_nip(vm_s);
     ose_pop(vm_s);
-    ose_nip(vm_s);
+    if(ose_bundleHasAtLeastNElems(vm_s, 2))
+    {
+    	ose_nip(vm_s);
+    }
 }
 
 void oscript_exec_load(ose_bundle vm_s)
@@ -495,4 +504,7 @@ void oscript_exec_load(ose_bundle vm_s)
     ose_pushMessage(vm_s, "/o/apply",
                     strlen("/o/apply"),
                     1, OSETT_ALIGNEDPTR, oscript_apply);
+    ose_pushMessage(vm_s, "/o/funcall",
+                    strlen("/o/funcall"),
+                    1, OSETT_ALIGNEDPTR, oscript_funcall);
 }

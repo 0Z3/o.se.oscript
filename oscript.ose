@@ -173,14 +173,15 @@
 /'/!/repl/format
 /'/!/swap
 
-/'/!/count/items
-/'/!/make/bundle
-/'/!/swap
-/'/$/result/store
-/'/!/blob/toelem
-/'/!/swap
-/'/!/if
-/'/!/drop
+/'/!/result/store
+/#/ /'/!/count/items
+/#/ /'/!/make/bundle
+/#/ /'/!/swap
+/#/ /'/$/result/store
+/#/ /'/!/blob/toelem
+/#/ /'/!/swap
+/#/ /'/!/if
+/#/ /'/!/drop
 /'/</_e
 
 /'/$/ansi/color/cyan

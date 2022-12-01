@@ -43,6 +43,11 @@ oscriptVisitorImpl::oscriptVisitorImpl(int32_t nbytes, char *bytes)
 {
     bundle = ose_newBundleFromCBytes(nbytes, bytes);
 }
+
+void oscriptVisitorImpl::setUnclosedBundle()
+{
+    unclosed_bundle = 1;
+}
     
 antlrcpp::Any
 oscriptVisitorImpl::visitTopLevelBundle(oscriptParser::TopLevelBundleContext *context)
@@ -238,26 +243,42 @@ oscriptVisitorImpl::visitComment(oscriptParser::CommentContext *context)
     return context;
 }
 
+void oscriptVisitorImpl::visitBundle(std::vector<oscriptParser::OscBundleElemContext *> oscBundleElems)
+{
+    OSE_START_BUNDLE(bundle);
+    ++level;
+    {
+        for(int i = 0; i < oscBundleElems.size(); ++i)
+        {
+            auto e = oscBundleElems[i];
+            visit(e);
+        }
+    }
+    --level;
+    OSE_END_BUNDLE(bundle);
+}
+
 antlrcpp::Any
 oscriptVisitorImpl::visitLazyBundle(oscriptParser::LazyBundleContext *context)
 {
  	TRACE(context);
-    ++level;
-    ose_pushBundle(bundle);
-    int32_t o = ose_getLastBundleElemOffset(bundle);
-    int32_t bs = ose_readSize(bundle);
-    {
-        for(int i = 0; i < context->oscBundleElem().size(); ++i)
-        {
-            auto e = context->oscBundleElem()[i];
-            visit(e);
-        }
-    }
+    // ++level;
+    // ose_pushBundle(bundle);
+    // int32_t o = ose_getLastBundleElemOffset(bundle);
+    // int32_t bs = ose_readSize(bundle);
+    // {
+    //     for(int i = 0; i < context->oscBundleElem().size(); ++i)
+    //     {
+    //         auto e = context->oscBundleElem()[i];
+    //         visit(e);
+    //     }
+    // }
     
-    int32_t nbs = ose_readSize(bundle);
-    ose_writeInt32(bundle, o, OSE_BUNDLE_HEADER_LEN + (nbs - bs));
+    // int32_t nbs = ose_readSize(bundle);
+    // ose_writeInt32(bundle, o, OSE_BUNDLE_HEADER_LEN + (nbs - bs));
+    visitBundle(context->oscBundleElem());
     ose_elemToBlob(bundle);
-    --level;
+    // --level;
     return context;
 }
 
@@ -265,21 +286,53 @@ antlrcpp::Any
 oscriptVisitorImpl::visitEagerBundle(oscriptParser::EagerBundleContext *context)
 {
  	TRACE(context);
-    ++level;
-    ose_pushBundle(bundle);
-    int32_t o = ose_getLastBundleElemOffset(bundle);
-    int32_t bs = ose_readSize(bundle);
-    {
-        for(int i = 0; i < context->oscBundleElem().size(); ++i)
-        {
-            auto e = context->oscBundleElem()[i];
-            visit(e);
-        }
-    }
+    // ++level;
+    // ose_pushBundle(bundle);
+    // int32_t o = ose_getLastBundleElemOffset(bundle);
+    // int32_t bs = ose_readSize(bundle);
+    // {
+    //     for(int i = 0; i < context->oscBundleElem().size(); ++i)
+    //     {
+    //         auto e = context->oscBundleElem()[i];
+    //         visit(e);
+    //     }
+    // }
     
-    int32_t nbs = ose_readSize(bundle);
-    ose_writeInt32(bundle, o, OSE_BUNDLE_HEADER_LEN + (nbs - bs));
-    --level;
+    // int32_t nbs = ose_readSize(bundle);
+    // ose_writeInt32(bundle, o, OSE_BUNDLE_HEADER_LEN + (nbs - bs));
+    // --level;
+    visitBundle(context->oscBundleElem());
+    return context;
+}
+
+void postErrorMessage(std::string text)
+{
+    int n = printf("%s\n", text.c_str());
+    for(int i = 0; i < n - 1; ++i)
+    {
+        printf("~");
+    }
+    printf("^\n");
+}
+
+antlrcpp::Any
+oscriptVisitorImpl::visitUnclosedLazyBundle(oscriptParser::UnclosedLazyBundleContext *context)
+{
+    TRACE(context);
+    printf("level: %d\n", level);
+    postErrorMessage(context->getText());
+    visitBundle(context->oscBundleElem());
+    ose_elemToBlob(bundle);
+    return context;
+}
+
+antlrcpp::Any
+oscriptVisitorImpl::visitUnclosedEagerBundle(oscriptParser::UnclosedEagerBundleContext *context)
+{
+    TRACE(context);
+    printf("level: %d\n", level);
+    postErrorMessage(context->getText());
+    visitBundle(context->oscBundleElem());
     return context;
 }
 

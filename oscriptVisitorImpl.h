@@ -16,13 +16,17 @@ private:
     ose_bundle bundle;
     int level = 0; // 0 = top-level
     int inside_funcall = 0;
+    int unclosed_bundle = 0;
     void visitNonEmptyBundleImpl(std::vector<oscriptParser::OscBundleElemContext *> oscBundleElem);
     void lookupElemImpl(const char * const str);
+    void visitBundle(std::vector<oscriptParser::OscBundleElemContext *> oscBundleElems);
     
 public:
     ose_bundle getBundle();
     oscriptVisitorImpl(ose_bundle b);
     oscriptVisitorImpl(int32_t nbytes, char *bytes);
+
+    void setUnclosedBundle();
 
     antlrcpp::Any visitTopLevelBundle(oscriptParser::TopLevelBundleContext *context);
 
@@ -37,6 +41,10 @@ public:
     antlrcpp::Any visitLazyBundle(oscriptParser::LazyBundleContext *context);
 
     antlrcpp::Any visitEagerBundle(oscriptParser::EagerBundleContext *context);
+
+    antlrcpp::Any visitUnclosedLazyBundle(oscriptParser::UnclosedLazyBundleContext *context);
+    
+    antlrcpp::Any visitUnclosedEagerBundle(oscriptParser::UnclosedEagerBundleContext *context);
 
     antlrcpp::Any visitBind(oscriptParser::BindContext *context);
 

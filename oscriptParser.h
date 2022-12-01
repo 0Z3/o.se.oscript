@@ -129,6 +129,21 @@ public:
    
   };
 
+  class  UnclosedEagerBundleContext : public OscBundleContext {
+  public:
+    UnclosedEagerBundleContext(OscBundleContext *ctx);
+
+    oscriptParser::OscBundleElemContext *first = nullptr;
+    oscriptParser::OscBundleElemContext *rest = nullptr;
+    antlr4::tree::TerminalNode *LParen();
+    std::vector<OscBundleElemContext *> oscBundleElem();
+    OscBundleElemContext* oscBundleElem(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> SeqSep();
+    antlr4::tree::TerminalNode* SeqSep(size_t i);
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
   class  EagerBundleContext : public OscBundleContext {
   public:
     EagerBundleContext(OscBundleContext *ctx);
@@ -153,6 +168,21 @@ public:
     oscriptParser::OscBundleElemContext *rest = nullptr;
     antlr4::tree::TerminalNode *LBrace();
     antlr4::tree::TerminalNode *RBrace();
+    std::vector<OscBundleElemContext *> oscBundleElem();
+    OscBundleElemContext* oscBundleElem(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> SeqSep();
+    antlr4::tree::TerminalNode* SeqSep(size_t i);
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  UnclosedLazyBundleContext : public OscBundleContext {
+  public:
+    UnclosedLazyBundleContext(OscBundleContext *ctx);
+
+    oscriptParser::OscBundleElemContext *first = nullptr;
+    oscriptParser::OscBundleElemContext *rest = nullptr;
+    antlr4::tree::TerminalNode *LBrace();
     std::vector<OscBundleElemContext *> oscBundleElem();
     OscBundleElemContext* oscBundleElem(size_t i);
     std::vector<antlr4::tree::TerminalNode *> SeqSep();

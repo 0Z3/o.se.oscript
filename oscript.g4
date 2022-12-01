@@ -14,8 +14,29 @@ oscBundleElem
     ;
 
 oscBundle
-    : LBrace (first=oscBundleElem (SeqSep rest=oscBundleElem)*)? RBrace # lazyBundle
-    | LParen (first=oscBundleElem (SeqSep rest=oscBundleElem)*)? RParen # eagerBundle
+    : LBrace
+        (first=oscBundleElem
+            (SeqSep rest=oscBundleElem)* SeqSep?)?
+        RBrace # lazyBundle
+    | LParen
+        (first=oscBundleElem
+            (SeqSep rest=oscBundleElem)* SeqSep?)?
+        RParen # eagerBundle
+    // error: unclosed paren/brace
+    | LBrace
+        (first=oscBundleElem (SeqSep rest=oscBundleElem)*)?
+        {
+            notifyErrorListeners(_input->LT(-1),
+                                 "Unclosed bundle: missing '}'",
+                                 NULL);
+        } # unclosedLazyBundle
+    | LParen
+        (first=oscBundleElem (SeqSep rest=oscBundleElem)*)?
+        {
+            notifyErrorListeners(_input->LT(-1),
+                                 "Unclosed bundle: missing ')'",
+                                 NULL);
+        } # unclosedEagerBundle
     ;
 
 oscMessage
@@ -24,7 +45,8 @@ oscMessage
     | Float # float
     | String # string
     | Blob # blob
-    | LBracket first=oscBundleElem? (SeqSep rest=oscBundleElem)* RBracket # list
+    | LBracket first=oscBundleElem?
+        (SeqSep rest=oscBundleElem)* RBracket # list
     | CommentMessage # comment
     ;
 

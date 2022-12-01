@@ -39,6 +39,14 @@
 /s//o/push
 /!/_o/unwrap
 
+/s//!/pop
+/s//o/pop
+/!/_o/unwrap
+
+/s//!/unpack/drop
+/s//o/unpack/drop
+/!/_o/unwrap
+
 /s//!/assign
 /s//o/assign
 /!/_o/unwrap

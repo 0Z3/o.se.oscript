@@ -45,6 +45,14 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitUnclosedLazyBundle(oscriptParser::UnclosedLazyBundleContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitUnclosedEagerBundle(oscriptParser::UnclosedEagerBundleContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitBind(oscriptParser::BindContext *ctx) override {
     return visitChildren(ctx);
   }

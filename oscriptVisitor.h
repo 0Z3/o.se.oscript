@@ -34,6 +34,10 @@ public:
 
     virtual antlrcpp::Any visitEagerBundle(oscriptParser::EagerBundleContext *context) = 0;
 
+    virtual antlrcpp::Any visitUnclosedLazyBundle(oscriptParser::UnclosedLazyBundleContext *context) = 0;
+
+    virtual antlrcpp::Any visitUnclosedEagerBundle(oscriptParser::UnclosedEagerBundleContext *context) = 0;
+
     virtual antlrcpp::Any visitBind(oscriptParser::BindContext *context) = 0;
 
     virtual antlrcpp::Any visitInt(oscriptParser::IntContext *context) = 0;

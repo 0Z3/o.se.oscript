@@ -41,6 +41,7 @@ public:
         (void)visitor, (void)parser, (void)lexer;
         cerr << "Parse error " << line << ":" <<
             charPositionInLine << " " << msg << "\n";
+        visitor->setUnclosedBundle();
         if(offendingSymbol)
         {
             std::string symstr = offendingSymbol->getText();

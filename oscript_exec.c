@@ -231,6 +231,62 @@ static void oscript_execLambdaApplication(ose_bundle osevm)
     ose_clear(vm_c);
 }
 
+static void pushsemaphores(ose_bundle bundle)
+{
+#define OSCRIPT_SEM_BEG_MAGIC_INT32 0x23424547
+#define OSCRIPT_SEM_END_MAGIC_INT32 0x23454E44
+    ose_bundleAll(bundle);
+    /* ose_pushBundle(bundle); */
+    ose_pushMessage(bundle, "#BEG", strlen("#BEG"),
+                    1, OSETT_INT32, OSCRIPT_SEM_BEG_MAGIC_INT32);
+    ose_swap(bundle);
+    ose_unpackDrop(bundle);
+    /* ose_pushBundle(bundle); */
+    ose_pushMessage(bundle, "#END", strlen("#END"),
+                    1, OSETT_INT32, OSCRIPT_SEM_END_MAGIC_INT32);
+}
+
+static int is_beg_semaphore(ose_bundle bundle,
+                            int32_t size,
+                            int32_t offset)
+{
+    if(size == OSE_BUNDLE_HEADER_LEN
+       && !strcmp(ose_getBundlePtr(bundle) + offset + 4, "#BEG"))
+        /* can also check magic number */
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static int is_end_semaphore(ose_bundle bundle,
+                            int32_t size,
+                            int32_t offset)
+{
+    if(size == OSE_BUNDLE_HEADER_LEN
+       && !strcmp(ose_getBundlePtr(bundle) + offset + 4, "#END"))
+        /* can also check magic number */
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static void semaphore_to_bundle(ose_bundle bundle,
+                                int32_t size,
+                                int32_t offset)
+{
+    memcpy(ose_getBundlePtr(bundle) + offset + 4,
+           OSE_BUNDLE_ID OSE_TIMETAG_NULL,
+           OSE_BUNDLE_HEADER_LEN);
+}
+
 static void oscript_exec(ose_bundle osevm)
 {
     ose_bundle vm_i = OSEVM_INPUT(osevm);
@@ -239,10 +295,19 @@ static void oscript_exec(ose_bundle osevm)
     ose_bundle vm_c = OSEVM_CONTROL(osevm);
     ose_bundle vm_d = OSEVM_DUMP(osevm);
 
-    if(ose_peekType(vm_s) == OSETT_BUNDLE)
     {
-        // reverse the order
-        // ose_popAllDropBundle(vm_s);
+    	int32_t o = ose_getLastBundleElemOffset(vm_s);
+        if(!strcmp(ose_getBundlePtr(vm_s) + o + 4,
+                   OSE_BUNDLE_ID)
+           && ose_readInt32(vm_s, o) == OSE_BUNDLE_HEADER_LEN)
+        {
+            /* ose_bundleAll(vm_e); */
+            /* ose_pushBundle(vm_e); */
+            /* ose_swap(vm_e); */
+            /* ose_unpackDrop(vm_e); */
+            /* ose_drop(vm_s); */
+            return;
+        }
     }
 
     // int32_t toplevel = !ose_bundleHasAtLeastNElems(vm_c, 2);
@@ -291,11 +356,7 @@ static void oscript_exec(ose_bundle osevm)
     ose_clear(vm_c);
 
     // push semaphores onto the top and bottom of the env
-    ose_bundleAll(vm_e);
-    ose_pushBundle(vm_e);
-    ose_swap(vm_e);
-    ose_unpackDrop(vm_e);
-    ose_pushBundle(vm_e);
+    pushsemaphores(vm_e);
 }
 
 static void oscript_finalizeTopLevelExec(ose_bundle osevm)
@@ -403,7 +464,7 @@ static void oscript_finalizeExec(ose_bundle osevm)
 			<more of our stuff>
 			...
     */
-    char *b = ose_getBundlePtr(vm_s);
+    /* char *b = ose_getBundlePtr(vm_s); */
     int32_t o = OSE_BUNDLE_HEADER_LEN;
     int32_t s = ose_readInt32(vm_s, o);
     int32_t oo = o + 4 + OSE_BUNDLE_HEADER_LEN;
@@ -415,18 +476,19 @@ static void oscript_finalizeExec(ose_bundle osevm)
     while(oo < o + s)
     {
         ss = ose_readInt32(vm_s, oo);
-        if(ss == OSE_BUNDLE_HEADER_LEN
-           && !strcmp(b + oo + 4,
-                      OSE_BUNDLE_ID))
+        /* if(ss == OSE_BUNDLE_HEADER_LEN */
+        /*    && !strcmp(b + oo + 4, */
+        /*               OSE_BUNDLE_ID)) */
+        if(is_beg_semaphore(vm_s, ss, oo))
         {
+            semaphore_to_bundle(vm_s, ss, oo);
             ose_writeInt32(vm_s, o, oo - o - 4);
             ose_writeInt32(vm_s, oo, s - (oo - o));
-            /* ose_drop(vm_s); */
             break;
         }
         oo += ss + 4;
     }
-    /* 
+    /*
        continue seeking forward in the bundle to find the final
        semaphore 
     */
@@ -437,15 +499,17 @@ static void oscript_finalizeExec(ose_bundle osevm)
     while(oo < o + s)
     {
         ss = ose_readInt32(vm_s, oo);
-        if(ss == OSE_BUNDLE_HEADER_LEN
-           && !strcmp(b + oo + 4,
-                      OSE_BUNDLE_ID))
+        /* if(ss == OSE_BUNDLE_HEADER_LEN */
+        /*    && !strcmp(b + oo + 4, */
+        /*               OSE_BUNDLE_ID)) */
+        if(is_end_semaphore(vm_s, ss, oo))
         {
+            semaphore_to_bundle(vm_s, ss, oo);
             lso = oo;
         }
         oo += ss + 4;
     }
-    /* 
+    /*
        rewrite the bundle so that our stuff is in its own at 
        the end
     */

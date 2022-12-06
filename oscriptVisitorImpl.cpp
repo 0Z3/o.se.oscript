@@ -227,9 +227,19 @@ oscriptVisitorImpl::visitList(oscriptParser::ListContext *context)
         return context;
     }
     visit(context->oscBundleElem()[0]);
+    if(ose_peekType(bundle) == OSETT_BUNDLE)
+    {
+        ose_elemToBlob(bundle);
+        ose_setTypetag_impl(bundle, OSETT_BUNDLE);
+    }
     for(int i = 1; i < context->oscBundleElem().size(); ++i)
     {
         visit(context->oscBundleElem()[i]);
+        if(ose_peekType(bundle) == OSETT_BUNDLE)
+        {
+            ose_elemToBlob(bundle);
+            ose_setTypetag_impl(bundle, OSETT_BUNDLE);
+        }
         ose_push(bundle);
     }
     return context;

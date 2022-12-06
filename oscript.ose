@@ -31,6 +31,10 @@
 /s//o/todouble
 /!/_o/unwrap
 
+/s//!/toint32
+/s//o/toint32
+/!/_o/unwrap
+
 /s//!/typetag/set
 /s//o/typetag/set
 /!/_o/unwrap
@@ -47,8 +51,54 @@
 /s//o/unpack/drop
 /!/_o/unwrap
 
+/s//!/pop/all/drop/bundle
+/s//o/pop/all/drop/bundle
+/!/_o/unwrap
+
 /s//!/assign
 /s//o/assign
+/!/_o/unwrap
+
+/'/!/unpack/drop
+/'/!/lookup
+/'/!/nip
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/lookup
+/!/assign
+/</_x
+
+/'/!/unpack/drop
+/'/!/read
+/'/!/nip
+/'/i/0
+/'/!/item/toblob
+/'/i/1
+/'/!/decat/blob/fromstart
+/'/!/pop
+/'/!/drop
+/'/!/push
+/'/!/concat/blobs
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/string/fromfile/read
+/!/assign
+/</_x
+
+/'/!/unpack/drop
+/'/!/readlines
+/'/!/nip
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/lines/read
+/!/assign
+/</_x
+
+/s//!/quit
+/s//o/quit
 /!/_o/unwrap
 
 /s/./o.se.time/o.se.time.so
@@ -92,6 +142,7 @@
 
 /#/ /'/!/o/format
 /#/ /'/!/println
+/#/ /'/!/debug
 /!/bundle/all
 />/_x
 /!/swap

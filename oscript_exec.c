@@ -78,6 +78,14 @@ static void oscript_applyLambda(ose_bundle osevm)
 {
     ose_bundle vm_s = OSEVM_STACK(osevm);
     ose_bundle vm_c = OSEVM_CONTROL(osevm);
+    {
+        ose_bundleAll(vm_s);
+        ose_pop(vm_s);
+        ose_swap(vm_s);
+        ose_pop(vm_s);
+        ose_rot(vm_s);
+    }
+    
     ose_setTypetag_impl(vm_s, OSETT_BLOB);
     ose_blobToElem(vm_s);
     ose_popAllDrop(vm_s);
@@ -102,13 +110,27 @@ static void oscript_applyLambda(ose_bundle osevm)
             __builtin_debugtrap();
         }
     }
+
+    ose_rollBottom(vm_s);
     ose_bundleAll(vm_s);
     ose_pop(vm_s);
     ose_swap(vm_s);
+    ose_pop(vm_s);
+    ose_swap(vm_s);
     oscript_bindFnArgs(osevm);
+    ose_swap(vm_s);
+    ose_push(vm_s);
+    ose_swap(vm_s);
     ose_unpackDrop(vm_s);
     ose_rollBottom(vm_s);
-    ose_bundleAll(vm_s);
+
+    /* ose_bundleAll(vm_s); */
+    /* ose_pop(vm_s); */
+    /* ose_swap(vm_s); */
+    /* oscript_bindFnArgs(osevm); */
+    /* ose_unpackDrop(vm_s); */
+    /* ose_rollBottom(vm_s); */
+    /* ose_bundleAll(vm_s); */
 
     ose_pushString(vm_c, "/!/o/execlambdaapp");
     ose_swap(vm_c);
@@ -391,16 +413,17 @@ static void oscript_finalizeElem(ose_bundle osevm)
         }
         else
         {
-            for(int32_t i = 0; i < n; ++i)
-            {
-                ose_rollBottom(vm_s);
-                if(ose_peekType(vm_s) == OSETT_BUNDLE)
-                {
-                    ose_elemToBlob(vm_s);
-                    ose_setTypetag_impl(vm_s, OSETT_BUNDLE);
-                }
-            }
-            ose_builtin_assignStackToEnv(osevm);
+            /* for(int32_t i = 0; i < n; ++i) */
+            /* { */
+            /*     ose_rollBottom(vm_s); */
+            /*     if(ose_peekType(vm_s) == OSETT_BUNDLE) */
+            /*     { */
+            /*         ose_elemToBlob(vm_s); */
+            /*         ose_setTypetag_impl(vm_s, OSETT_BUNDLE); */
+            /*     } */
+            /* } */
+            /* ose_builtin_assignStackToEnv(osevm); */
+            ose_builtin_assignStackToEnv_impl(osevm, OSETT_BUNDLE);
         }
         ose_swap(vm_e);
         ose_unpackDrop(vm_e);
@@ -464,8 +487,8 @@ static void oscript_finalizeExec(ose_bundle osevm)
 			<more of our stuff>
 			...
     */
-    /* char *b = ose_getBundlePtr(vm_s); */
-    int32_t o = OSE_BUNDLE_HEADER_LEN;
+    /* int32_t o = OSE_BUNDLE_HEADER_LEN; */
+    int32_t o = ose_getLastBundleElemOffset(vm_s);
     int32_t s = ose_readInt32(vm_s, o);
     int32_t oo = o + 4 + OSE_BUNDLE_HEADER_LEN;
     int32_t ss;

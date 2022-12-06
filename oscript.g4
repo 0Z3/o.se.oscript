@@ -47,6 +47,8 @@ oscMessage
     | Blob # blob
     | LBracket first=oscBundleElem?
         (SeqSep rest=oscBundleElem)* RBracket # list
+    // | LBracket first=oscBundleElem?
+    //     (SeqSep rest=oscBundleElem)* # unclosedList
     | CommentMessage # comment
     ;
 

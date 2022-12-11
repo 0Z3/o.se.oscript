@@ -364,129 +364,10 @@ static void oscript_mapRest_impl(ose_bundle osevm)
         ose_moveElem(vm_s, vm_c);
         ose_moveElem(vm_s, vm_c);
         ose_dup(vm_c);
-        ose_pushString(vm_c, "/!/apply");
+        ose_pushString(vm_c, "/!/o/apply");
         ose_swap(vm_c);
         ose_pushString(vm_c, "");
     }
-    /* struct mapoffsets */
-    /* { */
-    /*     int32_t outer_bundle_size; */
-    /*     char outer_bundle_id[OSE_BUNDLE_HEADER_LEN]; */
-    /*     int32_t count_msg_size; */
-    /*     char count_msg_addr[4]; */
-    /*     char count_msg_tt[4]; */
-    /*     int32_t nelems; */
-    /*     int32_t count; */
-    /*     int32_t idx_bundle_size; */
-    /*     char idx_bundle_id[OSE_BUNDLE_HEADER_LEN]; */
-    /*     int32_t idx_msg1_size; */
-    /*     char idx_msg1_addr[4]; */
-    /*     char idx_msg1_tt[8]; */
-    /*     int32_t msg1_tt; */
-    /*     int32_t msg1_offset; */
-    /*     int32_t msg1_offset1; */
-    /*     int32_t msg1_offset2; */
-    /* } __attribute__((__packed__)); */
-    /* struct mapoffsets *offsets = (struct mapoffsets *)(bs + o); */
-    /* OSE_START_BUNDLE(vm_s); */
-    /* const int32_t nelems = ose_ntohl(offsets->nelems); */
-    /* const int32_t count = ose_ntohl(offsets->count); */
-    
-    /* const int32_t idx_msg_size = */
-    /*     ose_ntohl(offsets->idx_msg1_size); */
-    /* const int32_t idx_msg1_tt_offset = */
-    /*     (char *)&(offsets->msg1_tt) - (char *)offsets; */
-    /* const int32_t idx_msg1_offset_offset = */
-    /*     idx_msg1_tt_offset + 4; */
-    /* const int32_t idx_msg1_offset1_offset = */
-    /*     idx_msg1_offset_offset + 4; */
-    /* const int32_t idx_msg1_offset2_offset = */
-    /*     idx_msg1_offset1_offset + 4; */
-    /* for(int32_t i = 0; i < nelems; ++i) */
-    /* { */
-    /*     char elemtt = (char)ose_readInt32(vm_s, */
-    /*                                       o + idx_msg1_tt_offset */
-    /*                                       + ((idx_msg_size + 4) */
-    /*                                          * i)); */
-    /*     int32_t offset = ose_readInt32(vm_s, */
-    /*                                    o */
-    /*                                    + idx_msg1_offset_offset */
-    /*                                    + ((idx_msg_size + 4) */
-    /*                                       * i)); */
-    /*     int32_t offset1 = ose_readInt32(vm_s, */
-    /*                                     o */
-    /*                                     + idx_msg1_offset1_offset */
-    /*                                     + ((idx_msg_size + 4) */
-    /*                                        * i)); */
-    /*     if(elemtt == OSETT_BUNDLE) */
-    /*     { */
-    /*         ; */
-    /*     } */
-    /*     else */
-    /*     { */
-    /*         int32_t offset2 = */
-    /*             ose_readInt32(vm_s, */
-    /*                           o + idx_msg1_offset2_offset */
-    /*                           + ((idx_msg_size + 4) */
-    /*                              * i)); */
-    /*         char tt = ose_readByte(vm_s, o + offset1); */
-    /*         if(!tt) */
-    /*         { */
-    /*             ose_2drop(vm_s); */
-    /*             if(i > 0) */
-    /*             { */
-    /*                 ose_drop(vm_s); */
-    /*             } */
-    /*         } */
-    /*         int32_t pls = ose_getPayloadItemSize(vm_s, */
-    /*                                              tt, */
-    /*                                              o + offset, */
-    /*                                              o + offset2); */
-    /*         int32_t oldsize = ose_readSize(vm_s); */
-    /*         int32_t newmsgsize = 8 + pls; */
-    /*         ose_incSize(vm_s, newmsgsize + 4); */
-    /*         memset(bs + oldsize, 0, newmsgsize + 4); */
-    /*         ose_writeInt32(vm_s, oldsize, newmsgsize); */
-    /*         bs[oldsize + 8] = OSETT_ID; */
-    /*         bs[oldsize + 9] = tt; */
-    /*         memcpy(bs + oldsize + 12, bs + o + offset2, pls); */
-
-    /*         offsets->msg1_offset1 = */
-    /*             ose_htonl(ose_ntohl(offsets->msg1_offset1) + 1); */
-    /*         offsets->msg1_offset2 = */
-    /*             ose_htonl(ose_ntohl(offsets->msg1_offset2) + pls); */
-    /*     } */
-    /* } */
-    /* offsets->count = ose_htonl(ose_ntohl(offsets->count) + 1); */
-    /* OSE_END_BUNDLE(vm_s); */
-    /* { */
-    /*     ose_pushBundle(vm_s); */
-    /*     ose_rot(vm_s); */
-    /*     ose_push(vm_s); */
-    /*     ose_rot(vm_s); */
-    /*     ose_dup(vm_s); */
-    /*     ose_notrot(vm_s); */
-    /*     ose_push(vm_s); */
-    /* } */
-    /* /\* drop whatever command called us *\/ */
-    /* ose_drop(vm_c); */
-
-    /* /\*  */
-	/* 	/!/maprest */
-	/* 	map bndl */
-	/* 	/!/apply */
-    /*     fn */
-    /*     args */
-	/* 	/s/ <-- to be dropped */
-    /*  *\/ */
-	/* ose_pushString(vm_c, "/!/o/maprest"); */
-    /* ose_elemToBlob(vm_s); */
-    /* ose_moveElem(vm_s, vm_c); */
-    /* ose_pushString(vm_c, "/!/apply"); */
-    /* ose_moveElem(vm_s, vm_c); */
-    /* ose_moveElem(vm_s, vm_c); */
-    /* /\* original command to be dropped *\/ */
-    /* ose_pushString(vm_c, "");    */
 }
 
 static void oscript_mapRest(ose_bundle osevm)
@@ -682,9 +563,7 @@ static void oscript_if(ose_bundle osevm)
     {
         ose_unpackDrop(vm_s);
     }
-    ose_pushString(vm_c, "/!/drop");
-    ose_swap(vm_c);
-    ose_pushString(vm_c, "/!/exec1");
+    ose_pushString(vm_c, "/!/o/exec");
     ose_swap(vm_c);
 }
 
@@ -726,6 +605,202 @@ static void oscript_butlast(ose_bundle osevm)
     ose_drop(vm_s);
 }
 
+struct oscript_sort_item
+{
+    ose_bundle bundle;
+    int32_t typetag, offset, size, index;
+};
+
+static int sort_numToDouble(ose_constbundle bundle,
+                            const char tt,
+                            const int32_t offset)
+{
+    if(ose_isIntegerType(tt))
+    {
+#ifdef OSE_PROVIDE_TYPE_INT64
+        if(tt == OSETT_INT64 || tt == OSETT_UINT64)
+        {
+        }
+        else
+#endif
+        {
+#ifdef OSE_PROVIDE_TYPE_UINT32
+            if(tt == OSETT_UINT32)
+            {
+
+            }
+            else
+#endif
+            {
+                return (double)ose_readInt32(bundle, offset);
+            }
+        }
+    }
+    else if(ose_isFloatType(tt))
+    {
+        switch(tt)
+        {
+        case OSETT_FLOAT:
+            return (double)ose_readFloat(bundle, offset);
+#ifdef OSE_PROVIDE_TYPE_DOUBLE
+        case OSETT_DOUBLE:
+            return ose_readDouble(bundle, offset);
+#endif
+        }
+    }
+    return 0;
+}
+
+static int sort_cb(const void *v1, const void *v2)
+{
+    const struct oscript_sort_item *i1 = (const struct oscript_sort_item *)v1;
+    const struct oscript_sort_item *i2 = (const struct oscript_sort_item *)v2;
+    char tt1 = i1->typetag, tt2 = i2->typetag;
+    if(tt1 == OSETT_STRING && tt2 == OSETT_STRING)
+    {
+        return strcmp(ose_readString(i1->bundle, i1->offset),
+                      ose_readString(i2->bundle, i2->offset));
+    }
+    else if(tt1 == OSETT_STRING)
+    {
+        return 1;
+    }
+    else if(tt2 == OSETT_STRING)
+    {
+        return -1;
+    }
+    else
+    {
+        double d1 = sort_numToDouble(i1->bundle, tt1, i1->offset);
+        double d2 = sort_numToDouble(i2->bundle, tt2, i2->offset);
+        if(d1 < d2)
+        {
+            return -1;
+        }
+        else if(d2 < d1)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+}
+
+static void oscript_sort_impl(ose_bundle osevm,
+                              int32_t vals,
+                              int32_t idxs)
+{
+    ose_bundle vm_s = OSEVM_STACK(osevm);
+    char *b = ose_getBundlePtr(vm_s);
+    if(ose_bundleIsEmpty(vm_s))
+    {
+        ose_errno_set(osevm, OSE_ERR_ELEM_COUNT);
+        return;
+    }
+    if(ose_peekType(vm_s) != OSETT_BUNDLE)
+    {
+        ose_errno_set(osevm, OSE_ERR_ELEM_TYPE);
+        return;
+    }
+    ose_unpackDrop(vm_s);
+    if(ose_peekType(vm_s) != OSETT_MESSAGE)
+    {
+        ose_errno_set(osevm, OSE_ERR_ELEM_TYPE);
+        return;
+    }
+    const int32_t o = ose_getLastBundleElemOffset(vm_s);
+    const int32_t s = ose_readInt32(vm_s, o);
+    const int32_t ao = o + 4;
+    const int32_t asize = ose_pstrlen(b + ao);
+    const int32_t tto = ao + asize;
+    const int32_t ntt = strlen(b + tto);
+    const int32_t plo = tto + ose_pnbytes(ntt);
+    int32_t tto_ = tto + 1;
+    int32_t plo_ = plo;
+    struct oscript_sort_item items[ntt - 1];
+    for(int32_t i = 0; i < ntt - 1; ++i)
+    {
+        items[i].bundle = vm_s;
+        char tt = ose_readByte(vm_s, tto_);
+        items[i].typetag = tt;
+        items[i].offset = plo_;
+        items[i].index = i;
+        int32_t size = ose_getPayloadItemSize(vm_s, tt, o, plo_);
+        items[i].size = size;
+        plo_ += size;
+        ++tto_;
+    }
+    qsort((void *)items,
+          ntt - 1,
+          sizeof(struct oscript_sort_item),
+          sort_cb);
+
+    if(vals)
+    {
+        ose_incSize(vm_s, s + 4);
+        const int32_t no = o + s + 4;
+        memset(b + no, 0, s + 4);
+        ose_writeInt32(vm_s, no, s);
+        const int32_t nao = no + 4;
+        memcpy(b + nao, b + ao, asize);
+        int32_t ntto_ = nao + asize;
+        int32_t nplo_ = ntto_ + (plo - tto);
+        b[ntto_++] = OSETT_ID;
+        for(int32_t i = 0; i < ntt - 1; ++i)
+        {
+            b[ntto_++] = items[i].typetag;
+            memcpy(b + nplo_, b + items[i].offset, items[i].size);
+            nplo_ += items[i].size;
+        }
+        /* memcpy(b + o, b + no, s + 4); */
+        /* memset(b + no, 0, s + 4); */
+        /* ose_decSize(vm_s, s + 4); */
+    }
+    if(idxs)
+    {
+        
+        const int32_t no = ose_readSize(vm_s);
+        const int32_t ns = asize
+            + ose_pnbytes(ntt)
+            + (4 * (ntt - 1));
+        ose_incSize(vm_s, ns + 4);
+        memset(b + no, 0, ns + 4);
+        ose_writeInt32(vm_s, no, ns);
+        const int32_t nao = no + 4;
+        memcpy(b + nao, b + ao, asize);
+        int32_t ntto_ = nao + asize;
+        int32_t nplo_ = ntto_ + (plo - tto);
+        b[ntto_++] = OSETT_ID;
+        for(int32_t i = 0; i < ntt - 1; ++i)
+        {
+            b[ntto_++] = OSETT_INT32;
+            ose_writeInt32(vm_s, nplo_, items[i].index);
+            nplo_ += 4;
+        }
+        /* memcpy(b + o, b + no, s + 4); */
+        /* memset(b + no, 0, s + 4); */
+        /* ose_decSize(vm_s, s + 4); */
+    }
+    int32_t amt = ose_readSize(vm_s) - (o + s + 4);
+    memmove(b + o,
+            b + o + s + 4,
+            amt);
+    memset(b + o + amt, 0, s + 4);
+    ose_decSize(vm_s, s + 4);
+}
+
+static void oscript_sort(ose_bundle osevm)
+{
+    oscript_sort_impl(osevm, 1, 0);
+}
+
+static void oscript_sortidxs(ose_bundle osevm)
+{
+    oscript_sort_impl(osevm, 0, 1);
+}
+
 #define OSCRIPT_PUSHFN(name)                                    \
     {                                                           \
         ose_pushMessage(vm_s, "/o/"#name, strlen("/o/"#name),   \
@@ -753,6 +828,8 @@ void oscript_lib_load(ose_bundle vm_s)
     OSCRIPT_PUSHFN(last);
     OSCRIPT_PUSHFN(rest);
     OSCRIPT_PUSHFN(butlast);
+    OSCRIPT_PUSHFN(sort);
+    OSCRIPT_PUSHFN(sortidxs);
 
     ose_pushMessage(vm_s, "/o/blob/toelem",
                     strlen("/o/blob/toelem"),

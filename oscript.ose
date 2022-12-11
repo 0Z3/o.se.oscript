@@ -23,41 +23,65 @@
 /!/bundle/all
 />/_x
 /!/swap
-/s//_o/unwrap
+/s//o/unwrap
 /!/assign
 /</_x
 
 /s//!/todouble
 /s//o/todouble
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/toint32
 /s//o/toint32
-/!/_o/unwrap
+/!/o/unwrap
+
+/s//!/tostring
+/s//o/tostring
+/!/o/unwrap
 
 /s//!/typetag/set
 /s//o/typetag/set
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/push
 /s//o/push
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/pop
 /s//o/pop
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/unpack/drop
 /s//o/unpack/drop
-/!/_o/unwrap
+/!/o/unwrap
+
+/'/!/unpack/drop
+/'/!/length/item
+/'/!/nip
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/length/item
+/!/assign
+/</_x
 
 /s//!/pop/all/drop/bundle
 /s//o/pop/all/drop/bundle
-/!/_o/unwrap
+/!/o/unwrap
+
+/'/!/unpack/drop
+/'/!/count/items
+/'/!/nip
+/!/bundle/all
+/>/_x
+/!/swap
+/s//o/length
+/!/assign
+/</_x
 
 /s//!/assign
 /s//o/assign
-/!/_o/unwrap
+/!/o/unwrap
 
 /'/!/unpack/drop
 /'/!/lookup
@@ -97,9 +121,17 @@
 /!/assign
 /</_x
 
+/s//!/decat/string/fromstart
+/s//o/decat/string/fromstart
+/!/o/unwrap
+
 /s//!/quit
 /s//o/quit
-/!/_o/unwrap
+/!/o/unwrap
+
+/s//!/pushcontextmessage
+/s//o/bndlenv/new
+/!/o/unwrap
 
 /s/./o.se.time/o.se.time.so
 /!/load
@@ -107,7 +139,7 @@
 
 /s//!/time/now
 /s//o/time/now
-/!/_o/unwrap
+/!/o/unwrap
 
 /s/./o.se.udp/o.se.udp.so
 /!/load
@@ -115,23 +147,23 @@
 
 /s//!/udp/receive
 /s//o/udp/receive
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/udp/sock/create
 /s//o/udp/sock/create
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/udp/sendto
 /s//o/udp/sendto
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/udp/close
 /s//o/udp/close
-/!/_o/unwrap
+/!/o/unwrap
 
 /s//!/udp/recv
 /s//o/udp/recv
-/!/_o/unwrap
+/!/o/unwrap
 
 /!/bundle/all
 />/_x
@@ -162,8 +194,19 @@
 /!/assign
 /</_x
 
+/o/concat/strings : {["/!/unpack/drop", "/!/push", "/!/concat/strings"]}
+/!/o/parse
+/!/exec1
+/!/drop
+/<</_x
 
-/o/println : {["/!/unpack/drop", "/!/o/formatln", "/!/println"]}
+/o/print : {["/!/unpack/drop", "/!/o/format", "/!/print"]}
+/!/o/parse
+/!/exec1
+/!/drop
+/<</_x
+
+/o/println : {["/!/unpack/drop", "/!/o/format", "/!/println"]}
 /!/o/parse
 /!/exec1
 /!/drop

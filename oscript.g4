@@ -113,7 +113,7 @@ ValidAddressChar
     ;
 
 Int32
-    : IntegerConstant
+    : '-'? IntegerConstant
     ;
 
 Float

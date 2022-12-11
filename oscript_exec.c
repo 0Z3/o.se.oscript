@@ -397,9 +397,20 @@ static void oscript_finalizeElem(ose_bundle osevm)
     ose_bundle vm_i = OSEVM_INPUT(osevm);
     ose_bundle vm_s = OSEVM_STACK(osevm);
     ose_bundle vm_e = OSEVM_ENV(osevm);
+    ose_bundle bndlenv = vm_e;
     if(ose_bundleHasAtLeastNElems(vm_s, 2))
     {
-        ose_bundleAll(vm_e);
+        const char * const s = ose_peekString(vm_s);
+        if(s[3] == '/')
+        {
+            const char buf[4] = {s[0], s[1], s[2], 0};
+            int32_t o = ose_getContextMessageOffset(osevm, buf);
+            if(o >= 0)
+            {
+                bndlenv = ose_enterBundleAtOffset(osevm, o);
+            }
+        }
+        ose_bundleAll(bndlenv);
         // least efficient way possible to do this...
         int32_t n = ose_getBundleElemCount(vm_s);
         char *b = ose_getBundlePtr(vm_s);
@@ -409,24 +420,38 @@ static void oscript_finalizeElem(ose_bundle osevm)
                       OSE_BUNDLE_ID))
         {
             ose_drop(vm_s);
-            ose_moveElem(vm_s, vm_e);
+            ose_moveElem(vm_s, bndlenv);
         }
         else
         {
-            /* for(int32_t i = 0; i < n; ++i) */
+            /* const char * const s = ose_peekString(vm_s); */
+            /* if(s[3] == '/') */
             /* { */
-            /*     ose_rollBottom(vm_s); */
-            /*     if(ose_peekType(vm_s) == OSETT_BUNDLE) */
+            /*     const char buf[4] = {s[0], s[1], s[2], 0}; */
+            /*     int32_t o = ose_getContextMessageOffset(osevm, buf); */
+            /*     if(o >= 0) */
             /*     { */
-            /*         ose_elemToBlob(vm_s); */
-            /*         ose_setTypetag_impl(vm_s, OSETT_BUNDLE); */
+            /*         ose_bundle bb = ose_enterBundleAtOffset(osevm, o); */
+            /*         ose_builtin_assignStackToEnv_impl(osevm, */
+            /*                                           bb, */
+            /*                                           OSETT_BUNDLE); */
+            /*     } */
+            /*     else */
+            /*     { */
+            /*         ose_builtin_assignStackToEnv_impl(osevm, */
+            /*                                           vm_e, */
+            /*                                           OSETT_BUNDLE); */
             /*     } */
             /* } */
-            /* ose_builtin_assignStackToEnv(osevm); */
-            ose_builtin_assignStackToEnv_impl(osevm, OSETT_BUNDLE);
+            /* else */
+            {
+                ose_builtin_assignStackToEnv_impl(osevm,
+                                                  bndlenv,
+                                                  OSETT_BUNDLE);
+            }
         }
-        ose_swap(vm_e);
-        ose_unpackDrop(vm_e);
+        ose_swap(bndlenv);
+        ose_unpackDrop(bndlenv);
     }
     else if(!ose_bundleIsEmpty(vm_s))
     {
@@ -488,7 +513,8 @@ static void oscript_finalizeExec(ose_bundle osevm)
 			...
     */
     /* int32_t o = OSE_BUNDLE_HEADER_LEN; */
-    int32_t o = ose_getLastBundleElemOffset(vm_s);
+    const int32_t lbeo = ose_getLastBundleElemOffset(vm_s);
+    int32_t o = lbeo;
     int32_t s = ose_readInt32(vm_s, o);
     int32_t oo = o + 4 + OSE_BUNDLE_HEADER_LEN;
     int32_t ss;
@@ -542,14 +568,26 @@ static void oscript_finalizeExec(ose_bundle osevm)
        discard the stuff that's not ours, and combine the two
        bundles
     */
+    /* int32_t on, sn, onm1, snm1, onm2, snm2; */
+    /* extern void be3(ose_bundle, */
+    /*                 int32_t *, */
+    /*                 int32_t *, */
+    /*                 int32_t *, */
+    /*                 int32_t *, */
+    /*                 int32_t *, */
+    /*                 int32_t *); */
+    /* be3(vm_s, &onm2, &snm2, &onm1, &snm1, &on, &sn); */
     ose_nip(vm_s);
     ose_swap(vm_s);
     ose_popAllDropBundle(vm_s);
     ose_swap(vm_s);
     ose_unpackDrop(vm_s);
-    ose_writeInt32(vm_s, OSE_BUNDLE_HEADER_LEN,
-                   ose_readSize(vm_s)
-                   - (4 + OSE_BUNDLE_HEADER_LEN));
+    ose_writeInt32(vm_s, lbeo,
+                   (ose_readSize(vm_s)
+                    - (lbeo + 4)));
+    /* ose_writeInt32(vm_s, OSE_BUNDLE_HEADER_LEN, */
+    /*                ose_readSize(vm_s) */
+    /*                - (4 + OSE_BUNDLE_HEADER_LEN)); */
 }
 
 static void oscript_finalizeExecLambdaApplication(ose_bundle osevm)

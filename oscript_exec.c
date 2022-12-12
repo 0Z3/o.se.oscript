@@ -124,14 +124,6 @@ static void oscript_applyLambda(ose_bundle osevm)
     ose_unpackDrop(vm_s);
     ose_rollBottom(vm_s);
 
-    /* ose_bundleAll(vm_s); */
-    /* ose_pop(vm_s); */
-    /* ose_swap(vm_s); */
-    /* oscript_bindFnArgs(osevm); */
-    /* ose_unpackDrop(vm_s); */
-    /* ose_rollBottom(vm_s); */
-    /* ose_bundleAll(vm_s); */
-
     ose_pushString(vm_c, "/!/o/execlambdaapp");
     ose_swap(vm_c);
 }
@@ -385,11 +377,11 @@ static void oscript_finalizeTopLevelExec(ose_bundle osevm)
 {
     ose_bundle vm_s = OSEVM_STACK(osevm);
     ose_bundle vm_e = OSEVM_ENV(osevm);
-    ose_bundleAll(vm_e);
+    /* ose_bundleAll(vm_e); */
     ose_moveElem(vm_s, vm_e);
     ose_unpackDrop(vm_e);
-    ose_rollBottom(vm_e);
-    ose_unpackDrop(vm_e);
+    /* ose_rollBottom(vm_e); */
+    /* ose_unpackDrop(vm_e); */
 }
 
 static void oscript_finalizeElem(ose_bundle osevm)
@@ -398,7 +390,8 @@ static void oscript_finalizeElem(ose_bundle osevm)
     ose_bundle vm_s = OSEVM_STACK(osevm);
     ose_bundle vm_e = OSEVM_ENV(osevm);
     ose_bundle bndlenv = vm_e;
-    if(ose_bundleHasAtLeastNElems(vm_s, 2))
+    int32_t ns = ose_getBundleElemCount(vm_s);
+    if(ns >= 2)
     {
         const char * const s = ose_peekString(vm_s);
         if(s[3] == '/')
@@ -410,50 +403,43 @@ static void oscript_finalizeElem(ose_bundle osevm)
                 bndlenv = ose_enterBundleAtOffset(osevm, o);
             }
         }
-        ose_bundleAll(bndlenv);
-        // least efficient way possible to do this...
-        int32_t n = ose_getBundleElemCount(vm_s);
+        
         char *b = ose_getBundlePtr(vm_s);
-        if(n == 2
-           && !strcmp(ose_peekString(vm_s), OSE_ADDRESS_ANONVAL)
+        if(ns == 2
+           && !strcmp(s, OSE_ADDRESS_ANONVAL)
            && !strcmp(b + OSE_BUNDLE_HEADER_LEN + 4,
                       OSE_BUNDLE_ID))
         {
-            ose_drop(vm_s);
-            ose_moveElem(vm_s, bndlenv);
+            /* ose_bundleAll(bndlenv); */
+            /* ose_drop(vm_s); */
+            /* ose_moveElem(vm_s, bndlenv); */
+            /* ose_swap(bndlenv); */
+            /* ose_unpackDrop(bndlenv); */
+            int32_t bes = ose_readSize(bndlenv);
+            char *be = ose_getBundlePtr(bndlenv);
+            int32_t o = OSE_BUNDLE_HEADER_LEN;
+            int32_t s = ose_readInt32(vm_s, o);
+            ose_incSize(bndlenv, s + 4);
+            memmove(be + o + s + 4,
+                    be + o,
+                    bes);
+            memcpy(be + o, b + o, s + 4);
+            ose_clear(vm_s);
         }
         else
         {
-            /* const char * const s = ose_peekString(vm_s); */
-            /* if(s[3] == '/') */
-            /* { */
-            /*     const char buf[4] = {s[0], s[1], s[2], 0}; */
-            /*     int32_t o = ose_getContextMessageOffset(osevm, buf); */
-            /*     if(o >= 0) */
-            /*     { */
-            /*         ose_bundle bb = ose_enterBundleAtOffset(osevm, o); */
-            /*         ose_builtin_assignStackToEnv_impl(osevm, */
-            /*                                           bb, */
-            /*                                           OSETT_BUNDLE); */
-            /*     } */
-            /*     else */
-            /*     { */
-            /*         ose_builtin_assignStackToEnv_impl(osevm, */
-            /*                                           vm_e, */
-            /*                                           OSETT_BUNDLE); */
-            /*     } */
-            /* } */
-            /* else */
-            {
-                ose_builtin_assignStackToEnv_impl(osevm,
-                                                  bndlenv,
-                                                  OSETT_BUNDLE);
-            }
+            /* ose_bundleAll(bndlenv); */
+            ose_builtin_assignStackToEnv_impl(osevm,
+                                              bndlenv,
+                                              0,
+                                              1,
+                                              OSETT_BUNDLE);
+            /* ose_swap(bndlenv); */
+            /* ose_unpackDrop(bndlenv); */
         }
-        ose_swap(bndlenv);
-        ose_unpackDrop(bndlenv);
+        
     }
-    else if(!ose_bundleIsEmpty(vm_s))
+    else if(ns == 1)
     {
         if(ose_peekType(vm_s) == OSETT_MESSAGE
            && ose_peekMessageArgType(vm_s) == OSETT_STRING)
@@ -482,13 +468,99 @@ static void oscript_finalizeElem(ose_bundle osevm)
     
     if(!ose_bundleIsEmpty(vm_i))
     {
-        ose_pushString(vm_i, "/!/o/finalize/elem");
-        ose_swap(vm_i);
+        char *bi = ose_getBundlePtr(vm_i);
+        int32_t o = ose_getLastBundleElemOffset(vm_i);
+        int32_t s = ose_readInt32(vm_i, o);
+        int32_t new_msg_size = OSE_ADDRESS_ANONVAL_SIZE + 4 + 20;
+        ose_incSize(vm_i,
+                    new_msg_size + 4);
+        memmove(bi + o + 4 + new_msg_size,
+                bi + o,
+                s + 4);
+        ose_writeInt32(vm_i, o, new_msg_size);
+        memcpy(bi + o + 4,
+               OSE_ADDRESS_ANONVAL ",s\0\0/!/o/finalize/elem\0\0" ,
+               new_msg_size);
+        o += new_msg_size + 4;
+        /* ose_pushString(vm_i, "/!/o/finalize/elem"); */
+        /* ose_swap(vm_i); */
         if(ose_peekType(vm_i) == OSETT_MESSAGE)
         {
-            ose_pushString(vm_i, OSE_ADDRESS_ANONVAL);
-            ose_push(vm_i);
-            ose_swapStringToAddress(vm_i);
+            /* { */
+            /*     char buf[65536]; */
+            /*     memset(buf, 0, 65536); */
+            /*     ose_pprintBundle(vm_i, buf, 65536); */
+            /*     fprintf(stderr, ">>>>>\n\r%s\n\r*****\n\r", */
+            /*             buf); */
+            /* } */
+            /* ose_pushString(vm_i, OSE_ADDRESS_ANONVAL); */
+            /* ose_push(vm_i); */
+            /* ose_swapStringToAddress(vm_i); */
+            int32_t ao = o + 4;
+            int32_t as = ose_pstrlen(bi + ao);
+            int32_t tto = ao + as;
+            int32_t ntt = strlen(bi + tto);
+            int32_t plo = tto + ose_pnbytes(ntt);
+            if(ose_pnbytes(ntt + 1) != (plo - tto))
+            {
+                ose_incSize(vm_i, 4);
+                memmove(bi + plo + 4,
+                        bi + plo,
+                        s - (plo - (o + 4)));
+                bi[plo] = 0;
+                bi[plo + 1] = 0;
+                bi[plo + 2] = 0;
+                bi[plo + 3] = 0;
+                plo += 4;
+                s += 4;
+                ose_writeInt32(vm_i, o, s);
+            }
+            bi[tto + ntt] = OSETT_STRING;
+            if(as == OSE_ADDRESS_ANONVAL_SIZE)
+            {
+                /* printf("here\n"); */
+                ose_incSize(vm_i, OSE_ADDRESS_ANONVAL_SIZE);
+                s += 4;
+                ose_writeInt32(vm_i, o, s);
+                memcpy(bi + o + s,
+                       bi + o + 4,
+                       OSE_ADDRESS_ANONVAL_SIZE);
+                memcpy(bi + o + 4,
+                       OSE_ADDRESS_ANONVAL,
+                       OSE_ADDRESS_ANONVAL_SIZE);
+            }
+            else
+            {
+                /* printf("there\n"); */
+                ose_incSize(vm_i, as);
+                /* copy address to end of message */
+                memcpy(bi + o + s + 4,
+                       bi + o + 4,
+                       as);
+                /* shift everything left */
+                memmove(bi + o + 4 + OSE_ADDRESS_ANONVAL_SIZE,
+                        bi + tto,
+                        (s - (tto - (o + 4))) + ao);
+                /* copy anon address to address */
+                memcpy(bi + ao,
+                       OSE_ADDRESS_ANONVAL,
+                       OSE_ADDRESS_ANONVAL_SIZE);
+                /* memset extra bytes at end */
+                memset(bi + o + s + 4 + (as - OSE_ADDRESS_ANONVAL_SIZE),
+                       0,
+                       as - OSE_ADDRESS_ANONVAL_SIZE);
+                s += OSE_ADDRESS_ANONVAL_SIZE;
+                ose_writeInt32(vm_i, o, s);
+                ose_decSize(vm_i,
+                            (as - OSE_ADDRESS_ANONVAL_SIZE));
+            }
+            /* { */
+            /*     char buf[65536]; */
+            /*     memset(buf, 0, 65536); */
+            /*     ose_pprintBundle(vm_i, buf, 65536); */
+            /*     fprintf(stderr, "%s\n\r<<<<<\n\r", */
+            /*             buf); */
+            /* } */
         }
         else
         {
@@ -568,15 +640,6 @@ static void oscript_finalizeExec(ose_bundle osevm)
        discard the stuff that's not ours, and combine the two
        bundles
     */
-    /* int32_t on, sn, onm1, snm1, onm2, snm2; */
-    /* extern void be3(ose_bundle, */
-    /*                 int32_t *, */
-    /*                 int32_t *, */
-    /*                 int32_t *, */
-    /*                 int32_t *, */
-    /*                 int32_t *, */
-    /*                 int32_t *); */
-    /* be3(vm_s, &onm2, &snm2, &onm1, &snm1, &on, &sn); */
     ose_nip(vm_s);
     ose_swap(vm_s);
     ose_popAllDropBundle(vm_s);
@@ -585,22 +648,42 @@ static void oscript_finalizeExec(ose_bundle osevm)
     ose_writeInt32(vm_s, lbeo,
                    (ose_readSize(vm_s)
                     - (lbeo + 4)));
-    /* ose_writeInt32(vm_s, OSE_BUNDLE_HEADER_LEN, */
-    /*                ose_readSize(vm_s) */
-    /*                - (4 + OSE_BUNDLE_HEADER_LEN)); */
 }
 
 static void oscript_finalizeExecLambdaApplication(ose_bundle osevm)
 {
     ose_bundle vm_s = OSEVM_STACK(osevm);
-    ose_popAllDropBundle(vm_s);
-    ose_pop(vm_s);
-    ose_nip(vm_s);
-    ose_pop(vm_s);
-    if(ose_bundleHasAtLeastNElems(vm_s, 2))
+    char *b = ose_getBundlePtr(vm_s);
+    int32_t oldsize = ose_readSize(vm_s);
+    int32_t o = ose_getLastBundleElemOffset(vm_s);
+    int32_t s = ose_readInt32(vm_s, o);
+    int32_t oo = o + OSE_BUNDLE_HEADER_LEN + 4;
+    int32_t ss = ose_readInt32(vm_s, oo);
+    int32_t ooo = oo + OSE_BUNDLE_HEADER_LEN + 4;
+    int32_t sss;
+    while(1)
     {
-    	ose_nip(vm_s);
+        sss = ose_readInt32(vm_s, ooo);
+        if(ooo + sss + 4 >= oo + ss + 4)
+        {
+            break;
+        }
+        ooo = ooo + sss + 4;
     }
+    ose_incSize(vm_s, sss + 4);
+    memcpy(b + oldsize, b + ooo, sss + 4);
+    memset(b + o, 0, s + 4);
+    memcpy(b + o, b + oldsize, sss + 4);
+    memset(b + oldsize, 0, sss + 4);
+    ose_decSize(vm_s, s + 4);
+    /* ose_popAllDropBundle(vm_s); */
+    /* ose_pop(vm_s); */
+    /* ose_nip(vm_s); */
+    /* ose_pop(vm_s); */
+    /* if(ose_bundleHasAtLeastNElems(vm_s, 2)) */
+    /* { */
+    /* 	ose_nip(vm_s); */
+    /* } */
 }
 
 void oscript_exec_load(ose_bundle vm_s)

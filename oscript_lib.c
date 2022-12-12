@@ -357,16 +357,144 @@ static void oscript_mapRest_impl(ose_bundle osevm)
     OSE_END_BUNDLE(vm_s);
     MAP_SET_COUNT(vm_s, o, count + 1);
     {
-        ose_notrot(vm_s);
-        ose_drop(vm_c);     /* our command */
-        ose_pushString(vm_c, "/!/o/maprest");
-        ose_elemToBlob(vm_s);
-        ose_moveElem(vm_s, vm_c);
-        ose_moveElem(vm_s, vm_c);
-        ose_dup(vm_c);
-        ose_pushString(vm_c, "/!/o/apply");
-        ose_swap(vm_c);
-        ose_pushString(vm_c, "");
+        /* ose_notrot(vm_s); */
+        /* ose_drop(vm_c);     /\* our command *\/ */
+        /* ose_pushString(vm_c, "/!/o/maprest"); */
+        /* ose_elemToBlob(vm_s); */
+        /* ose_moveElem(vm_s, vm_c); */
+        /* ose_moveElem(vm_s, vm_c); */
+        /* ose_dup(vm_c); */
+        /* ose_pushString(vm_c, "/!/o/apply"); */
+        /* ose_swap(vm_c); */
+        /* ose_pushString(vm_c, ""); */
+
+        /* 
+           There are three elements on the
+           stack, and we want to move two of
+           them to control, and leave the third
+           on the stack:
+
+           STACK:		CONTROL:
+           E_nm2		...
+           E_nm1		<our command>
+           E_n
+
+		   STACK:		CONTROL:
+           E_n			...
+						[s:/!/o/maprest]
+						[b:E_nm1]
+						E_nm2
+						[s:/!/o/apply]
+						E_nm2
+						[s:] <-- will be dropped
+        */
+        char *bc = ose_getBundlePtr(vm_c);
+        int32_t co = ose_getLastBundleElemOffset(vm_c);
+        int32_t cs = ose_readInt32(vm_c, co);
+        int32_t s = ose_readSize(vm_s);
+        int32_t onm2 = OSE_BUNDLE_HEADER_LEN;
+        int32_t snm2 = ose_readInt32(vm_s, onm2);
+        int32_t onm1 = onm2 + snm2 + 4;
+        int32_t snm1 = ose_readInt32(vm_s, onm1);
+        int32_t on = onm1 + snm1 + 4;
+        int32_t sn = ose_readInt32(vm_s, on);
+        while(on + sn + 4 < s)
+        {
+            onm2 = onm1;
+            snm2 = ose_readInt32(vm_s, onm2);
+            onm1 = on;
+            snm1 = ose_readInt32(vm_s, onm1);
+            on += sn + 4;
+            sn = ose_readInt32(vm_s, on);
+        }
+        int32_t addrsize = OSE_ADDRESS_ANONVAL_SIZE;
+        int32_t typetagsize = 4;
+        int32_t msg_maprest_size =
+            addrsize + typetagsize + 16;
+        int32_t msg_enm1_size =
+            addrsize + typetagsize + snm1 + 4;
+        int32_t msg_apply_size = addrsize + typetagsize + 12;
+        int32_t msg_empty_size = addrsize + typetagsize;
+        int32_t amt =
+            4 + msg_maprest_size +
+            4 + msg_enm1_size +
+            snm2 + 4 +
+            4 + msg_apply_size +
+            snm2 + 4 +
+            4 + msg_empty_size;
+
+        ose_incSize(vm_c, amt - (cs + 4));
+
+        int32_t o = co;
+        {
+            ose_writeInt32(vm_c, o, msg_maprest_size);
+            o += 4;
+            memcpy(bc + o,
+                   OSE_ADDRESS_ANONVAL,
+                   OSE_ADDRESS_ANONVAL_SIZE);
+            o += OSE_ADDRESS_ANONVAL_SIZE;
+            bc[o++] = OSETT_ID;
+            bc[o++] = OSETT_STRING;
+            bc[o++] = 0;
+            bc[o++] = 0;
+            memcpy(bc + o, "/!/o/maprest\0\0\0\0", 16);
+            o += 16;
+        }
+        {
+            ose_writeInt32(vm_c, o, msg_enm1_size);
+            o += 4;
+            memcpy(bc + o,
+                   OSE_ADDRESS_ANONVAL,
+                   OSE_ADDRESS_ANONVAL_SIZE);
+            o += OSE_ADDRESS_ANONVAL_SIZE;
+            bc[o++] = OSETT_ID;
+            bc[o++] = OSETT_BLOB;
+            bc[o++] = 0;
+            bc[o++] = 0;
+            memcpy(bc + o, bs + onm1, snm1 + 4);
+            o += snm1 + 4;
+        }
+        {
+            memcpy(bc + o, bs + onm2, snm2 + 4);
+            o += snm2 + 4;
+        }
+        {
+            ose_writeInt32(vm_c, o, msg_apply_size);
+            o += 4;
+            memcpy(bc + o,
+                   OSE_ADDRESS_ANONVAL,
+                   OSE_ADDRESS_ANONVAL_SIZE);
+            o += OSE_ADDRESS_ANONVAL_SIZE;
+            bc[o++] = OSETT_ID;
+            bc[o++] = OSETT_STRING;
+            bc[o++] = 0;
+            bc[o++] = 0;
+            memcpy(bc + o, "/!/o/apply\0\0", 12);
+            o += 12;
+        }
+        {
+            memcpy(bc + o, bs + onm2, snm2 + 4);
+            o += snm2 + 4;
+        }
+        {
+            ose_writeInt32(vm_c, o, msg_empty_size);
+            o += 4;
+            memcpy(bc + o,
+                   OSE_ADDRESS_ANONVAL,
+                   OSE_ADDRESS_ANONVAL_SIZE);
+            o += OSE_ADDRESS_ANONVAL_SIZE;
+            bc[o++] = OSETT_ID;
+            bc[o++] = 0;
+            bc[o++] = 0;
+            bc[o++] = 0;
+        }
+
+        {
+            memset(bs + onm2, 0, snm2 + snm1 + 8);
+            memmove(bs + onm2, bs + on, sn + 4);
+            memset(bs + on, 0, sn + 4);
+            ose_decSize(vm_s, snm2 + snm1 + 8);
+        }
     }
 }
 
